@@ -1,45 +1,65 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>Agro Empire: Auction</title><script src="https://telegram.org/js/telegram-web-app.js"></script><style>
-:root{--bg:#1a1a2e;--card:#16213e;--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#5d4037;--grass:#27ae60;--stone:#7f8c8d;--red:#e74c3c;}
-body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:hidden;user-select:none;}
-.header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);position:sticky;top:0;z-index:100;}
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>Agro Empire: Pro Edition</title><script src="https://telegram.org/js/telegram-web-app.js"></script><style>
+:root{--bg:#0f0c29;--card:rgba(22, 33, 62, 0.8);--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#5d4037;--grass:#27ae60;--stone:#7f8c8d;--red:#e74c3c;}
+body{background:linear-gradient(135deg, #0f0c29, #302b63, #24243e);margin:0;font-family:'Segoe UI',sans-serif;color:white;overflow:hidden;user-select:none;}
+
+/* Header & Level Button */
+.header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100;}
 .stats-line{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:8px;}
-.level-bar-container{background:#333;height:12px;border-radius:6px;overflow:hidden;position:relative;border:1px solid #444;}
-.level-bar-fill{background:linear-gradient(90deg, var(--accent), #00d2ff);height:100%;transition:0.3s;}
-.level-text{position:absolute;width:100%;text-align:center;font-size:9px;font-weight:bold;line-height:12px;color:white;text-shadow:1px 1px 1px black;}
+.level-area{display:flex;align-items:center;gap:10px;}
+.lvl-btn{background:var(--accent);color:#000;border:none;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px var(--accent);}
+.level-bar-container{flex-grow:1;background:#333;height:14px;border-radius:7px;overflow:hidden;position:relative;border:1px solid #444;}
+.level-bar-fill{background:linear-gradient(90deg, #00d2ff, #3a7bd5);height:100%;transition:width 0.5s cubic-bezier(0.4, 0, 0.2, 1);}
+.level-text{position:absolute;width:100%;text-align:center;font-size:9px;font-weight:bold;line-height:14px;color:white;text-shadow:1px 1px 1px black;}
 
-.screen{display:none;height:78vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:120px;}
+/* Screens & Animations */
+.screen{display:none;height:78vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:120px;animation:fadeIn 0.4s ease-out;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 .active-screen{display:block;}
-.tabs-loc{display:flex;gap:10px;margin-bottom:15px;}
-.tab-btn{flex:1;padding:8px;border-radius:8px;border:none;background:var(--card);color:white;font-weight:bold;border:1px solid #333;font-size:10px;}
-.tab-btn.active{background:var(--accent);color:#1a1a2e;border-color:white;}
 
-.farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;} 
-    
-.slot{height:130px;background:var(--grass);border:3px solid #1e8449;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 5px 0 #145a32;}
+.tabs-loc{display:flex;gap:10px;margin-bottom:15px;}
+.tab-btn{flex:1;padding:10px;border-radius:10px;border:none;background:var(--card);color:white;font-weight:bold;border:1px solid #333;transition:0.3s;}
+.tab-btn.active{background:var(--accent);color:#1a1a2e;transform:scale(1.05);}
+
+/* Grid & Slots */
+.farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+.slot{height:130px;background:var(--grass);border:3px solid #1e8449;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 6px 0 #145a32;transition:0.1s active;}
+.slot:active{transform:translateY(4px);box-shadow:0 2px 0 #145a32;}
 .slot.item-plot{background:var(--dirt); border-color:#3e2723;}
 .slot.item-stone{background:var(--stone); border-color:#5a6263;}
-.slot.locked{background:#1a1a2e; border: 2px dashed #444; opacity:0.6; box-shadow:none;}
+.slot.locked{background:rgba(0,0,0,0.3); border: 2px dashed #555; opacity:0.6; box-shadow:none;}
 
-.auc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.auc-card{background:var(--card);border:1px solid var(--accent);border-radius:10px;padding:10px;text-align:center;position:relative;}
-.auc-icon{font-size:30px;margin-bottom:5px;}
-.m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:10px;border-radius:8px;font-weight:bold;width:100%;margin-top:5px;cursor:pointer;font-size:11px;}
-.footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:10px 0;border-top:2px solid #0f3460;z-index:100;}
-.nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:8px;}
-.nav-btn.active{color:var(--accent);}
-.card{background:var(--card);padding:12px;border-radius:10px;margin-bottom:10px;border:1px solid #0f3460;}
-input{width:80%;padding:8px;border-radius:5px;border:none;margin:5px 0;background:#0f3460;color:white;text-align:center;}
+/* Modal/Popup */
+#lvl-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:20px;z-index:1000;backdrop-filter:blur(15px);text-align:center;box-shadow:0 0 30px rgba(0,0,0,0.5);}
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999;}
+
+.m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:12px;border-radius:10px;font-weight:bold;width:100%;margin-top:5px;cursor:pointer;transition:0.2s;}
+.m-btn:active{transform:scale(0.95);}
+.footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:12px 0;border-top:2px solid #0f3460;z-index:100;backdrop-filter:blur(10px);}
+.nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:9px;transition:0.3s;}
+.nav-btn.active{color:var(--accent);transform:translateY(-5px);}
+.card{background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.1);}
+input, select{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0;background:#0f3460;color:white;box-sizing:border-box;}
 </style></head><body onload="init()">
+
+<div class="overlay" id="overlay" onclick="closeModal()"></div>
+<div id="lvl-modal">
+    <h3 style="color:var(--accent);margin-top:0">🎯 ЗАВДАННЯ</h3>
+    <div id="lvl-task-desc">Завантаження...</div>
+    <button class="m-btn" onclick="closeModal()" style="margin-top:20px">ЗРОЗУМІЛО</button>
+</div>
 
 <div class="header">
     <div class="stats-line">
         <div style="color:var(--gold)">💰 <span id="balance">0</span></div>
-        <div style="font-weight:bold;color:var(--accent)">AGRO EMPIRE</div>
+        <div style="font-weight:bold;letter-spacing:1px;color:var(--accent)">AGRO EMPIRE</div>
         <div style="color:var(--accent)">💎 <span id="diamonds">0.0</span></div>
     </div>
-    <div class="level-bar-container">
-        <div id="level-fill" class="level-bar-fill" style="width:0%"></div>
-        <div class="level-text" id="level-display">Рівень 1 (0/10)</div>
+    <div class="level-area">
+        <button class="lvl-btn" onclick="openLvlModal()">УРОВЕНЬ</button>
+        <div class="level-bar-container">
+            <div id="level-fill" class="level-bar-fill" style="width:0%"></div>
+            <div class="level-text" id="level-display">Рівень 1 (0/10)</div>
+        </div>
     </div>
 </div>
 
@@ -93,7 +113,7 @@ let user = {
     map_farm: [ {type:'plot', data:null}, null, null, null ],
     map_mine: [ null, null, null, null ],
     slots_farm: 4, slots_mine: 4, stats: {}, unlockedIdx: 0,
-    myAuction: [] // {id, item, count, price, expiry}
+    myAuction: [] 
 };
 
 const crops = [
@@ -110,11 +130,29 @@ const crops = [
 ];
 
 function init() {
-    let saved = localStorage.getItem('agro_auction_v1');
+    let saved = localStorage.getItem('agro_pro_v1');
     if(saved) user = JSON.parse(saved);
     checkAuctionExpiry();
     updateUI(); renderMap();
     setInterval(() => { renderMap(); updateUI(); checkQuests(); }, 1000);
+}
+
+function openLvlModal() {
+    let next = crops[user.unlockedIdx + 1];
+    let desc = document.getElementById('lvl-task-desc');
+    if(!next) {
+        desc.innerHTML = "Ти досяг максимального рівня! Поки що...";
+    } else {
+        let left = next.req - user.totalHarvests;
+        desc.innerHTML = `Щоб відкрити <b>${next.e} ${next.n}</b>, тобі потрібно зібрати ще <b style="color:var(--gold)">${left}</b> врожаїв. <br><br> Поточний прогрес: ${user.totalHarvests} / ${next.req}`;
+    }
+    document.getElementById('lvl-modal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('lvl-modal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
 }
 
 function updateUI() {
@@ -124,19 +162,24 @@ function updateUI() {
     let prev = crops[user.unlockedIdx].req;
     let prog = next === prev ? 100 : ((user.totalHarvests - prev) / (next - prev)) * 100;
     document.getElementById('level-fill').style.width = prog + "%";
-    document.getElementById('level-display').innerText = `Рівень ${user.level} (${user.totalHarvests}/${next})`;
+    document.getElementById('level-display').innerText = `Lvl ${user.level} (${user.totalHarvests}/${next})`;
 }
 
 function checkQuests() {
     let next = crops[user.unlockedIdx + 1];
     if(next && user.totalHarvests >= next.req) {
         user.unlockedIdx++; user.level++;
-        tg.showAlert("НОВИЙ РІВЕНЬ! Відкрито: " + next.n);
+        tg.showPopup({title: 'Новий Рівень!', message: 'Ви відкрили: ' + next.e + ' ' + next.n});
         save();
     }
 }
 
-function switchLoc(loc) { currentLoc = loc; renderMap(); }
+function switchLoc(loc) { 
+    currentLoc = loc; 
+    document.getElementById('tab-farm').className = loc === 'farm' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('tab-mine').className = loc === 'mine' ? 'tab-btn active' : 'tab-btn';
+    renderMap(); 
+}
 
 function renderMap() {
     let g = document.getElementById('main-grid'); g.innerHTML = '';
@@ -147,22 +190,23 @@ function renderMap() {
         let d = document.createElement('div');
         if(i < maxSlots) {
             let obj = map[i]; d.className = 'slot';
-            if(!obj) { d.innerHTML = "+"; d.onclick = () => placeObject(i); }
+            if(!obj) { d.innerHTML = "<span style='font-size:30px;opacity:0.3'>+</span>"; d.onclick = () => placeObject(i); }
             else {
                 if(obj.type === 'plot') {
                     d.classList.add('item-plot');
                     if(obj.data) {
                         let left = Math.ceil((obj.data.finish - Date.now())/1000);
-                        d.innerHTML = left <= 0 ? `<b>${obj.data.emoji}</b>` : `🌱<br><small>${left}с</small>`;
+                        if(left <= 0) d.innerHTML = `<b style="font-size:40px">${obj.data.emoji}</b><br><small>READY</small>`;
+                        else d.innerHTML = `🌱<br><small>${left}s</small>`;
                     } else d.innerHTML = "🟫";
                 } else {
                     d.classList.add('item-stone');
                     let left = Math.ceil((obj.next - Date.now())/1000);
-                    d.innerHTML = left <= 0 ? `💎` : `⏳`;
+                    d.innerHTML = left <= 0 ? `<span style="font-size:40px">💎</span>` : `⏳`;
                 }
                 d.onclick = () => handleObject(i);
             }
-        } else if(i === maxSlots) { d.className='slot locked'; d.innerHTML="🔒"; d.onclick=()=>buyLand(maxSlots*100); }
+        } else if(i === maxSlots) { d.className='slot locked'; d.innerHTML="🔒<br>"+(maxSlots*100); d.onclick=()=>buyLand(maxSlots*100); }
         else { d.className='slot locked'; d.innerHTML="🔒"; }
         g.appendChild(d);
     }
@@ -174,7 +218,7 @@ function handleObject(i) {
     if(obj.type === 'plot') {
         if(!obj.data) {
             let s = Object.keys(user.inventory.seeds).find(k => user.inventory.seeds[k] > 0);
-            if(!s) return;
+            if(!s) return tg.showAlert("Купи насіння!");
             user.inventory.seeds[s]--;
             obj.data = { emoji: s, finish: Date.now() + (crops.find(x=>x.e===s).t * 1000) };
         } else if(Date.now() >= obj.data.finish) {
@@ -183,6 +227,7 @@ function handleObject(i) {
         }
     } else if(Date.now() >= obj.next) {
         user.diamonds += 0.2; obj.next = Date.now() + 7200000;
+        tg.showAlert("+0.2 💎");
     }
     save(); renderMap();
 }
@@ -190,31 +235,34 @@ function handleObject(i) {
 function placeObject(i) {
     if(currentLoc === 'farm' && user.inventory.plot > 0) { user.inventory.plot--; user.map_farm[i] = {type:'plot', data:null}; }
     else if(currentLoc === 'mine' && user.inventory.stone > 0) { user.inventory.stone--; user.map_mine[i] = {type:'stone', next:Date.now()+7200000}; }
+    else return tg.showAlert("Купи предмет у Шопі!");
     renderMap(); save();
 }
 
-function switchAuc(tab) { currentAucTab = tab; renderAuction(); }
+function switchAuc(tab) { 
+    currentAucTab = tab; 
+    document.getElementById('auc-buy-tab').className = tab === 'buy' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('auc-sell-tab').className = tab === 'sell' ? 'tab-btn active' : 'tab-btn';
+    renderAuction(); 
+}
 
 function renderAuction() {
     let cont = document.getElementById('auc-content');
     if(currentAucTab === 'buy') {
-        cont.innerHTML = '<h4>Лоти від інших фермерів:</h4><div class="auc-grid" id="auc-buy-list"></div>';
-        // Фейкові лоти для демонстрації
-        let fake = [
-            {e:'🌽', n:'Кукурудза', c:5, p:15}, {e:'🥕', n:'Морква', c:2, p:20}
-        ];
+        cont.innerHTML = '<div class="auc-grid" id="auc-buy-list"></div>';
+        let fake = [{e:'🌽', n:'Кукурудза', c:5, p:15}, {e:'🥕', n:'Морква', c:2, p:20}];
         fake.forEach(f => {
-            document.getElementById('auc-buy-list').innerHTML += `<div class="auc-card"><div class="auc-icon">${f.e}</div><b>${f.n}</b><br>К-сть: ${f.c}<br><button class="m-btn" onclick="buyAucFake(${f.p})">КУПИТИ ${f.p}💰</button></div>`;
+            document.getElementById('auc-buy-list').innerHTML += `<div class="card" style="text-align:center"><div style="font-size:30px">${f.e}</div><b>${f.n}</b><br>К-сть: ${f.c}<button class="m-btn" onclick="buyAucFake(${f.p})">КУПИТИ ${f.p}💰</button></div>`;
         });
     } else {
-        cont.innerHTML = '<h4>Виставити на продаж:</h4>';
         let items = "";
         for(let e in user.stats) if(user.stats[e] > 0) items += `<option value="${e}">${e}</option>`;
-        cont.innerHTML += `<div class="card">
-            <select id="auc-item-sel" style="width:100%;padding:10px;border-radius:8px;">${items}</select>
+        cont.innerHTML = `<div class="card">
+            <h4 style="margin:0">Новий лот (Лот ${user.myAuction.length}/3)</h4>
+            <select id="auc-item-sel">${items || '<option>Склад порожній</option>'}</select>
             <input type="number" id="auc-count" placeholder="Кількість">
-            <input type="number" id="auc-price" placeholder="Ціна (💰)">
-            <button class="m-btn" onclick="createLot()">ВИСТАВИТИ (Лот ${user.myAuction.length}/3)</button>
+            <input type="number" id="auc-price" placeholder="Ціна">
+            <button class="m-btn" onclick="createLot()">ВИСТАВИТИ</button>
         </div><div id="my-lots-list"></div>`;
         renderMyLots();
     }
@@ -229,16 +277,16 @@ function createLot() {
         user.stats[e] -= c;
         user.myAuction.push({e, c, p, expiry: Date.now() + 86400000});
         save(); renderAuction();
-    } else tg.showAlert("Перевір кількість!");
+    } else tg.showAlert("Недостатньо товару!");
 }
 
 function renderMyLots() {
     let list = document.getElementById('my-lots-list');
-    list.innerHTML = "<h4>Мої активні лоти:</h4>";
+    list.innerHTML = "";
     user.myAuction.forEach((l, idx) => {
         list.innerHTML += `<div class="card" style="display:flex;justify-content:space-between;align-items:center;">
             <span>${l.e} x${l.c} - <b>${l.p}💰</b></span>
-            <button class="m-btn" style="width:auto;background:var(--red);color:white;margin:0;" onclick="cancelLot(${idx})">ВІДМІНА</button>
+            <button class="m-btn" style="width:auto;background:var(--red);color:white;margin:0;padding:5px 10px" onclick="cancelLot(${idx})">ВІДМІНА</button>
         </div>`;
     });
 }
@@ -257,7 +305,6 @@ function checkAuctionExpiry() {
             let l = user.myAuction[i];
             user.stats[l.e] = (user.stats[l.e] || 0) + l.c;
             user.myAuction.splice(i, 1);
-            tg.showAlert("Товар не купили, його повернуто на склад!");
         }
     }
     save();
@@ -272,11 +319,9 @@ function renderShop() {
     let h = "";
     crops.forEach((c, idx) => {
         let locked = idx > user.unlockedIdx;
-        h += `<div class="card" style="opacity:${locked?0.5:1}">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span>${locked?'🔒':c.e} ${c.n} (${c.p}💰)</span>
-                <button onclick="buySeed('${c.e}', ${c.p})" class="m-btn" style="width:auto;margin:0;" ${locked?'disabled':''}>КУПИТИ</button>
-            </div>
+        h += `<div class="card" style="opacity:${locked?0.5:1}; display:flex; justify-content:space-between; align-items:center">
+            <span>${locked?'🔒':c.e} ${c.n} <br><small>${c.p}💰</small></span>
+            <button onclick="buySeed('${c.e}', ${c.p})" class="m-btn" style="width:auto;margin:0;" ${locked?'disabled':''}>КУПИТИ</button>
         </div>`;
     });
     document.getElementById('seed-list').innerHTML = h;
@@ -287,11 +332,11 @@ function renderDealer() {
     for(let e in user.stats) {
         if(user.stats[e] > 0) {
             let crop = crops.find(x => x.e === e);
-            h += `<div class="card" style="display:flex;justify-content:space-between;"><span>${e} ${crop.n} x${user.stats[e]}</span><span>+${(user.stats[e]*crop.s).toFixed(1)}💰</span></div>`;
+            h += `<div class="card" style="display:flex;justify-content:space-between;"><span>${e} ${crop.n} (x${user.stats[e]})</span><span style="color:var(--gold)">+${(user.stats[e]*crop.s).toFixed(1)}💰</span></div>`;
             empty = false;
         }
     }
-    document.getElementById('inventory-sell').innerHTML = empty ? "Порожньо" : h;
+    document.getElementById('inventory-sell').innerHTML = empty ? "<center>Склад порожній</center>" : h;
 }
 
 function sellAll() {
@@ -310,6 +355,6 @@ function show(s, b) {
     if(s === 'dealer') renderDealer();
 }
 
-function save() { localStorage.setItem('agro_auction_v1', JSON.stringify(user)); }
+function save() { localStorage.setItem('agro_pro_v1', JSON.stringify(user)); }
 </script></body></html>
             
