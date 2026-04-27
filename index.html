@@ -3,134 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Real Wheat Farm</title>
+    <title>Agro Hacker Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #37474f; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
+        body { background: #2c3e50; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
+        .header { background: #1a252f; padding: 15px; display: flex; justify-content: space-between; border-bottom: 3px solid #27ae60; }
+        .coins { color: #f1c40f; font-weight: bold; font-size: 20px; }
         
-        /* Панель стану */
-        .header { background: #263238; padding: 15px; display: flex; justify-content: space-between; border-bottom: 2px solid #ffca28; }
-        .coins { color: #ffca28; font-weight: bold; font-size: 20px; }
-
-        /* Екрани */
-        .screen { display: none; height: 75vh; overflow-y: auto; padding: 20px; }
+        .screen { display: none; height: 75vh; overflow-y: auto; padding: 15px; }
         .active-screen { display: block; }
 
-        /* Грядки */
-        .farm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .plot { 
-            height: 100px; background: #4e342e; border: 3px solid #3e2723; border-radius: 15px;
-            display: flex; align-items: center; justify-content: center; position: relative;
-            transform: rotateX(20deg); box-shadow: 0 6px 0 #1b1b1b;
-        }
-        .plant { font-size: 40px; transition: transform 0.5s; }
+        /* Магазин і Ринок */
+        .tabs-header { display: flex; background: #34495e; }
+        .tab-btn { flex: 1; padding: 10px; border: none; color: white; background: none; font-weight: bold; opacity: 0.5; }
+        .tab-btn.active-tab { opacity: 1; border-bottom: 3px solid #27ae60; }
 
-        /* Магазин */
-        .shop-item { background: #455a64; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-        .shop-img { font-size: 30px; background: #263238; padding: 10px; border-radius: 10px; }
+        /* Картки товарів */
+        .item-card { background: #3e4f5f; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .market-slot { background: #16a085; padding: 10px; border-radius: 8px; margin-bottom: 5px; font-size: 13px; }
+
+        /* Ферма */
+        .farm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px; }
+        .plot { height: 100px; background: #3e2723; border: 4px solid #5d4037; border-radius: 15px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .plant { font-size: 40px; transition: 0.5s; }
 
         /* Футер */
-        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #212121; padding: 10px 0; }
-        .nav-btn { flex: 1; background: none; border: none; color: #9e9e9e; display: flex; flex-direction: column; align-items: center; font-size: 10px; }
-        .nav-btn.active { color: #ffca28; }
-        .nav-icon { font-size: 20px; margin-bottom: 2px; }
+        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #1a252f; padding: 10px 0; }
+        .nav-btn { flex: 1; background: none; border: none; color: #7f8c8d; display: flex; flex-direction: column; align-items: center; font-size: 10px; }
+        .nav-btn.active { color: #27ae60; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="coins">🪙 <span id="balance">300</span></div>
-    <div id="price-tag" style="font-size: 12px; color: #81c784;">Ціна зерна: 20$ 📈</div>
+    <div class="coins">💰 <span id="balance">500</span></div>
+    <div style="font-size: 12px; color: #ecf0f1;">Інвентар: <span id="inv-count">0</span></div>
+</div>
+
+<div id="shop-screen" class="screen">
+    <div class="tabs-header">
+        <button class="tab-btn active-tab" onclick="switchShopTab('buy')">МАГАЗИН</button>
+        <button class="tab-btn" onclick="switchShopTab('sell')">РИНОК ГРАВЦІВ</button>
+    </div>
+
+    <div id="buy-tab" style="margin-top:15px;">
+        <div class="item-card"><span>🌾 Пшениця</span><button onclick="buy(20, '🌾')">20$</button></div>
+        <div class="item-card"><span>🥔 Бараболя</span><button onclick="buy(40, '🥔')">40$</button></div>
+        <div class="item-card"><span>🌽 Кукурудза</span><button onclick="buy(60, '🌽')">60$</button></div>
+        <div class="item-card"><span>🥕 Морква</span><button onclick="buy(30, '🥕')">30$</button></div>
+        <div class="item-card"><span>🌻 Соняшник</span><button onclick="buy(100, '🌻')">100$</button></div>
+        <div class="item-card"><span>🎃 Гарбуз</span><button onclick="buy(120, '🎃')">120$</button></div>
+        <div class="item-card"><span>🍅 Томати</span><button onclick="buy(50, '🍅')">50$</button></div>
+        <div class="item-card"><span>🍉 Кавун</span><button onclick="buy(200, '🍉')">200$</button></div>
+    </div>
+
+    <div id="sell-tab" style="display:none; margin-top:15px;">
+        <button onclick="listOnMarket()" style="width:100%; padding:10px; background:#27ae60; border:none; color:white; border-radius:8px; margin-bottom:15px;">+ ПРОДАТИ ТОВАР</button>
+        <div id="market-list">
+            <p style="text-align:center; opacity:0.5;">Ваші активні лоти (макс 3):</p>
+        </div>
+    </div>
 </div>
 
 <div id="farm-screen" class="screen active-screen">
     <div class="farm-grid">
-        <div class="plot" onclick="handlePlot(0)"><div class="plant" id="p0"></div></div>
-        <div class="plot" onclick="handlePlot(1)"><div class="plant" id="p1"></div></div>
-        <div class="plot" onclick="handlePlot(2)"><div class="plant" id="p2"></div></div>
-        <div class="plot" onclick="handlePlot(3)"><div class="plant" id="p3"></div></div>
-    </div>
-</div>
-
-<div id="shop-screen" class="screen">
-    <h3 style="text-align: center;">НАСІННЯ ТА РОСЛИНИ</h3>
-    <div class="shop-item">
-        <div class="shop-img">🌾</div>
-        <div><b>Пшениця "Еліта"</b><br><small>Продавець: АгроМаркет</small></div>
-        <button onclick="buy(100)" style="background: #4caf50; border: none; color: white; padding: 8px; border-radius: 5px;">100$</button>
-    </div>
-    <div class="shop-item">
-        <div class="shop-img">🌽</div>
-        <div><b>Кукурудза</b><br><small>Продавець: Фермер-М</small></div>
-        <button onclick="alert('Доступно з 2 рівня!')" style="background: #757575; border: none; color: white; padding: 8px; border-radius: 5px;">ЗАКРИТО</button>
-    </div>
-</div>
-
-<div id="cash-screen" class="screen">
-    <div style="text-align: center; margin-top: 50px;">
-        <span style="font-size: 50px;">💰</span>
-        <h2>Ваш гаманець</h2>
-        <p>Мінімальна сума для виводу: 1000 монет</p>
-        <button onclick="tg.showAlert('Недостатньо коштів!')" style="background: #ff9800; border: none; color: white; padding: 15px 30px; border-radius: 10px; font-weight: bold;">ВИВЕСТИ НА ТОН</button>
+        <div class="plot" onclick="farm(0)"><div class="plant" id="p0"></div></div>
+        <div class="plot" onclick="farm(1)"><div class="plant" id="p1"></div></div>
+        <div class="plot" onclick="farm(2)"><div class="plant" id="p2"></div></div>
+        <div class="plot" onclick="farm(3)"><div class="plant" id="p3"></div></div>
     </div>
 </div>
 
 <div class="footer">
-    <button class="nav-btn" onclick="showScreen('shop', this)"><span class="nav-icon">📦</span>МАГАЗИН</button>
-    <button class="nav-btn active" onclick="showScreen('farm', this)"><span class="nav-icon">🚜</span>ФЕРМА</button>
-    <button class="nav-btn" onclick="showScreen('cash', this)"><span class="nav-icon">💵</span>ВИВІД</button>
-    <button class="nav-btn" onclick="tg.showAlert('Налаштування в розробці')"><span class="nav-icon">⚙️</span>ОПЦІЇ</button>
+    <button class="nav-btn active" onclick="showScreen('farm', this)">🚜 ФЕРМА</button>
+    <button class="nav-btn" onclick="showScreen('shop', this)">🛒 МАГАЗИН</button>
 </div>
 
 <script>
     let tg = window.Telegram.WebApp;
-    tg.expand();
-    
-    let balance = 300;
-    let wheatPrice = 20;
-    let states = [0, 0, 0, 0]; // 0-пусто, 1-паростки, 2-зелена, 3-золота
+    let balance = 500;
+    let inventory = [];
+    let marketSlots = 0;
+    let states = [0,0,0,0];
 
-    // Перемикання екранів
-    function showScreen(screenId, btn) {
+    function showScreen(id, btn) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-        document.getElementById(screenId + '-screen').classList.add('active-screen');
-        
+        document.getElementById(id + '-screen').classList.add('active-screen');
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     }
 
-    // Зміна ціни на ринку (кожні 10 сек)
-    setInterval(() => {
-        wheatPrice = Math.floor(Math.random() * (35 - 15 + 1)) + 15;
-        document.getElementById('price-tag').innerText = `Ціна зерна: ${wheatPrice}$ ` + (wheatPrice > 25 ? "📈" : "📉");
-    }, 10000);
+    function switchShopTab(tab) {
+        document.getElementById('buy-tab').style.display = tab === 'buy' ? 'block' : 'none';
+        document.getElementById('sell-tab').style.display = tab === 'sell' ? 'block' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active-tab', b.innerText.includes(tab === 'buy' ? 'МАГАЗИН' : 'РИНОК')));
+    }
 
-    function handlePlot(id) {
-        let p = document.getElementById('p' + id);
-        if (states[id] === 0) {
-            states[id] = 1;
-            p.innerText = "🌱"; // Стадія 1: Паростки
-            setTimeout(() => { if(states[id]==1) { states[id]=2; p.innerText="🌿"; } }, 4000); // Стадія 2: Зелень
-            setTimeout(() => { if(states[id]==2) { states[id]=3; p.innerText="🌾"; } }, 8000); // Стадія 3: Золота пшениця
-        } else if (states[id] === 3) {
-            balance += wheatPrice;
-            document.getElementById('balance').innerText = balance;
-            p.innerText = "";
-            states[id] = 0;
-            tg.sendData(JSON.stringify({action: "sell", sum: wheatPrice}));
-        } else {
-            tg.showAlert("Пшениця ще не дозріла! Треба зачекати жовтого кольору.");
+    function buy(price, emoji) {
+        if (balance >= price) {
+            balance -= price;
+            inventory.push(emoji);
+            updateUI();
+        } else { tg.showAlert("Мало грошей!"); }
+    }
+
+    function listOnMarket() {
+        if (marketSlots >= 3) { tg.showAlert("Максимум 3 лоти!"); return; }
+        if (inventory.length === 0) { tg.showAlert("Немає чого продавати!"); return; }
+
+        let count = prompt("Скільки продати? (доступно: " + inventory.length + ")", "1");
+        let price = prompt("Введіть вашу ціну ($):", "100");
+
+        if (count > 0 && count <= inventory.length && price > 0) {
+            let item = inventory.pop();
+            marketSlots++;
+            let div = document.createElement('div');
+            div.className = 'market-slot';
+            div.innerHTML = `📦 <b>${item}</b> | К-сть: ${count} | Ціна: ${price}$ <span style="float:right; color:red" onclick="this.parentElement.remove(); marketSlots--;">✖</span>`;
+            document.getElementById('market-list').appendChild(div);
+            updateUI();
         }
     }
 
-    function buy(price) {
-        if (balance >= price) {
-            balance -= price;
-            document.getElementById('balance').innerText = balance;
-            tg.showAlert("Ви купили добрива! Пшениця тепер росте швидше (в майбутньому)");
-        } else {
-            tg.showAlert("Мало грошей!");
+    function farm(id) {
+        let p = document.getElementById('p' + id);
+        if (states[id] === 0 && inventory.length > 0) {
+            let crop = inventory.pop();
+            states[id] = 1;
+            p.innerText = "🌱"; 
+            setTimeout(() => { p.innerText = "🌿"; }, 3000);
+            setTimeout(() => { p.innerText = crop; states[id] = 2; }, 6000);
+            updateUI();
+        } else if (states[id] === 2) {
+            balance += 50; // Прибуток
+            p.innerText = "";
+            states[id] = 0;
+            updateUI();
         }
+    }
+
+    function updateUI() {
+        document.getElementById('balance').innerText = balance;
+        document.getElementById('inv-count').innerText = inventory.length;
     }
 </script>
 </body>
