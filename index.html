@@ -2,60 +2,88 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Farm</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Crypto Farm</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #1a2a1a; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
-        .farm-plot { background: #3d2b1f; border: 4px solid #5d4037; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
-        .crop-icon { font-size: 50px; display: block; margin: 10px 0; }
-        button { background: #4caf50; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
-        .market-section { border-top: 2px dashed #4caf50; margin-top: 20px; padding-top: 20px; }
-        input { width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        body { background: #87ceeb; margin: 0; padding: 0; overflow: hidden; font-family: 'Arial', sans-serif; }
+        #farm-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1.2); }
+        .tile { position: absolute; width: 64px; height: 32px; background: url('tile.png') no-repeat; background-size: contain; }
+        .crop { position: absolute; font-size: 30px; transform: translate(15px, -20px); transition: opacity 0.5s; opacity: 0; }
+        .menu { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 20px 20px 0 0; text-align: center; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
+        button { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h1>МОЯ ФЕРМА 🌿</h1>
+    <h1>МОЯ ІЗОМЕТРИЧНА ФЕРМА</h1>
     
-    <div class="farm-plot">
-        <span class="crop-icon" id="crop">🟤</span>
-        <div id="status">Грунт готовий до посадки</div>
-        <button onclick="plant()">ПОСАДИТИ ПШЕНИЦЮ</button>
-    </div>
+    <div id="farm-container"></div>
 
-    <div class="market-section">
-        <h3>МАГАЗИН ВРОЖАЮ</h3>
-        <p>Виставити зібране на продаж:</p>
-        <input type="number" id="price" placeholder="Ціна в $">
-        <button style="background: #ff9800;" onclick="sell()">ПРОДАТИ НА МАРКЕТІ</button>
+    <div class="menu">
+        <p>Натисни на грядку (🌱) щоб посадити пшеницю.</p>
+        <button id="main-action" onclick="finishPlanting()">ЗІБРАТИ ВРОЖАЙ</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        let isReady = false;
+        const container = document.getElementById('farm-container');
+        let selectedTile = null;
+        let readyCrops = 0;
 
-        function plant() {
-            document.getElementById('crop').innerText = "🌱";
-            document.getElementById('status').innerText = "Росте... (5 сек)";
-            setTimeout(() => {
-                document.getElementById('crop').innerText = "🌾";
-                document.getElementById('status').innerText = "ВРОЖАЙ ГОТОВИЙ!";
-                isReady = true;
-            }, 5000);
+        // Створюємо поле 4x4 (ізометрія)
+        const gridSize = 4;
+        const tileWidth = 64;
+        const tileHeight = 32;
+
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                
+                // Формула для ізометричного позиціонування
+                const isoX = (x - y) * tileWidth / 2;
+                const isoY = (x + y) * tileHeight / 2;
+                
+                tile.style.left = `${isoX}px`;
+                tile.style.top = `${isoY}px`;
+                tile.onclick = () => selectTile(tile, isoX, isoY);
+                container.appendChild(tile);
+            }
         }
 
-        function sell() {
-            let price = document.getElementById('price').value;
-            if (isReady && price > 0) {
+        function selectTile(tile, x, y) {
+            if (tile.dataset.hasCrop) return; // Вже росте
+            selectedTile = tile;
+            
+            // Створюємо crop
+            const crop = document.createElement('span');
+            crop.className = 'crop';
+            crop.innerText = "🌱";
+            crop.style.left = `${x}px`;
+            crop.style.top = `${y}px`;
+            container.appendChild(crop);
+            
+            tile.dataset.hasCrop = "true";
+            
+            // Пшениця виростає через 10 секунд
+            setTimeout(() => {
+                crop.innerText = "🌾";
+                crop.style.opacity = "1";
+                readyCrops++;
+            }, 10000);
+        }
+
+        function finishPlanting() {
+            if (readyCrops > 0) {
                 tg.sendData(JSON.stringify({
-                    action: "farm_sell",
-                    item: "Пшениця вищого сорту",
-                    price: price
+                    action: "farm_harvest",
+                    amount: readyCrops
                 }));
+                readyCrops = 0;
                 tg.close();
             } else {
-                alert("Спочатку вирости врожай!");
+                alert("Врожай ще не готовий!");
             }
         }
     </script>
