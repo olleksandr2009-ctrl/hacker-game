@@ -1,28 +1,28 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>Agro Map Editor</title><script src="https://telegram.org/js/telegram-web-app.js"></script><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>Agro Empire Tycoon</title><script src="https://telegram.org/js/telegram-web-app.js"></script><style>
 :root{--bg:#1a1a2e;--card:#16213e;--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#5d4037;--grass:#27ae60;}
 body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:hidden;user-select:none;}
 .header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);display:flex;justify-content:space-between;align-items:center;font-size:12px;position:sticky;top:0;z-index:100;}
 .screen{display:none;height:82vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:120px;}
 .active-screen{display:block;}
-/* КАРТА (ЗЕЛЕНА) */
-.farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:10px;}
-.slot{height:120px;background:var(--grass);border:3px solid #1e8449;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 6px 0 #145a32;overflow:hidden;}
+/* СІТКА ЗЕМЕЛЬ */
+.farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:10px;padding-bottom:100px;}
+.slot{height:140px;background:var(--grass);border:3px solid #1e8449;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 6px 0 #145a32;}
 .slot.item-stone{background:#7f8c8d; border-color:#95a5a6;}
 .slot.item-plot{background:var(--dirt); border-color:#3e2723;}
-/* МЕНЮ ОБ'ЄКТІВ */
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;z-index:200;align-items:center;justify-content:center;}
-.modal-content{background:var(--card);padding:20px;border-radius:15px;width:80%;text-align:center;}
-/* КНОПКИ */
+.slot.locked{background:#1a1a2e; border: 2px dashed #444; opacity:0.6; box-shadow:none;}
+/* МЕНЮ */
 .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:10px 0;border-top:2px solid #0f3460;z-index:100;}
-.nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:10px;}
+.nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:9px;}
 .nav-btn.active{color:var(--accent);}
-.m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:10px;border-radius:8px;font-weight:bold;width:100%;margin-top:5px;}
+.m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:10px;border-radius:8px;font-weight:bold;width:100%;margin-top:5px;cursor:pointer;}
 .card{background:var(--card);padding:12px;border-radius:10px;margin-bottom:10px;border:1px solid #0f3460;}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;z-index:200;align-items:center;justify-content:center;}
+.modal-content{background:var(--card);padding:20px;border-radius:15px;width:85%;text-align:center;}
 </style></head><body onload="init()">
 
 <div class="header">
-    <div style="color:var(--gold)">💰 <span id="balance">0.0</span></div>
-    <div><b>МАПА</b></div>
+    <div style="color:var(--gold)">💰 <span id="balance">0</span></div>
+    <div><b>AGRO EMPIRE</b></div>
     <div style="color:var(--accent)">💎 <span id="diamonds">0.0</span></div>
 </div>
 
@@ -32,146 +32,216 @@ body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:h
 
 <div id="shop-screen" class="screen">
     <div class="card">
-        <h4 style="margin:0;color:var(--accent)">🪨 КУПИТИ КАМІНЦІ</h4>
-        <div style="display:flex;gap:10px;margin-top:10px;">
-            <button class="m-btn" onclick="buyObject('stone_small', 1000)">Малий (1к 💰)</button>
-            <button class="m-btn" onclick="buyObject('stone_big', 5000)">Великий (5к 💰)</button>
-        </div>
+        <h4 style="margin:0;color:var(--accent)">🏗️ БУДІВНИЦТВО</h4>
+        <button class="m-btn" onclick="buyObject('plot', 500)">🌱 Грядка (500💰)</button>
+        <button class="m-btn" onclick="buyObject('stone_small', 1500)">🪨 Малий камінь (1.5к💰)</button>
+        <button class="m-btn" onclick="buyObject('stone_big', 7000)">💎 Великий камінь (7к💰)</button>
     </div>
     <div class="card">
-        <h4 style="margin:0;color:var(--green)">🌱 КУПИТИ ГРЯДКУ</h4>
-        <button class="m-btn" style="background:var(--green);color:white;" onclick="buyObject('plot', 500)">Грядка (500 💰)</button>
+        <h4 style="margin:0;color:var(--gold)">🛒 НАСІННЯ</h4>
+        <div id="seed-list"></div>
     </div>
-    <h4 style="color:var(--accent)">🛒 НАСІННЯ</h4>
-    <div id="seed-list"></div>
 </div>
 
-<div id="build-modal" class="modal">
-    <div class="modal-content">
-        <h3>Що встановити?</h3>
-        <div id="build-options"></div>
-        <button class="m-btn" style="background:var(--red);color:white;margin-top:15px;" onclick="closeModal()">СКАСУВАТИ</button>
+<div id="buffs-screen" class="screen">
+    <h3 style="color:var(--accent)">⚡ ПОКРАЩЕННЯ</h3>
+    <div class="card">
+        <b>🧪 Нітро-добрива</b>
+        <p style="font-size:10px;color:#aaa;">Рослини ростуть у 2 рази швидше</p>
+        <button id="buff-nitro" class="m-btn" onclick="buyBuff('nitro', 10000)">Купити за 10к 💰</button>
+    </div>
+    <div class="card">
+        <b>🔨 Алмазне Кайло</b>
+        <p style="font-size:10px;color:#aaa;">+0.5 💎 до кожного видобутку</p>
+        <button id="buff-pickaxe" class="m-btn" onclick="buyBuff('pickaxe', 20 💎)">Купити за 20 💎</button>
     </div>
 </div>
+
+<div id="dealer-screen" class="screen">
+    <h3 style="color:var(--green)">🚚 ЦЕНТРАЛЬНИЙ РИНОК</h3>
+    <div class="card" id="inventory-sell">
+        </div>
+    <button class="m-btn" style="background:var(--green);color:white;" onclick="sellAll()">ПРОДАТИ ВЕСЬ ВРОЖАЙ</button>
+</div>
+
+<div id="build-modal" class="modal"><div class="modal-content"><h3>Що встановити?</h3><div id="build-options"></div><button class="m-btn" style="background:#e74c3c;color:white;margin-top:15px;" onclick="closeModal()">ЗАКРИТИ</button></div></div>
 
 <div class="footer">
     <button class="nav-btn active" onclick="show('map',this)">🗾 КАРТА</button>
     <button class="nav-btn" onclick="show('shop',this)">🛒 ШОП</button>
+    <button class="nav-btn" onclick="show('buffs',this)">⚡ БАФИ</button>
+    <button class="nav-btn" onclick="show('dealer',this)">🚚 СКУПЩИК</button>
 </div>
 
 <script>
 let tg = window.Telegram.WebApp;
-let selectedSlot = null;
 let user = {
-    balance: 2000.0, diamonds: 0.0,
-    inventory: { stone_small: 0, stone_big: 0, plot: 1, seeds: {} },
-    map: [ {type: 'plot', data: null}, null, null, null, null, null ], // 6 слотів на карті
-    stats: {}
+    balance: 1000, diamonds: 0,
+    inventory: { plot: 1, stone_small: 0, stone_big: 0, seeds: {} },
+    map: [ {type:'plot', data:null}, null, null, null ], // Початкові 4 слоти
+    totalSlots: 4,
+    stats: {},
+    buffs: { nitro: false, pickaxe: false }
 };
 
+const crops = [
+    {e:"🌾", n:"Пшениця", p:20, s:60, t:20},
+    {e:"🥕", n:"Морква", p:100, s:350, t:60}
+];
+
 function init() {
-    let saved = localStorage.getItem('agro_map_v1');
+    let saved = localStorage.getItem('agro_empire_v1');
     if(saved) user = JSON.parse(saved);
     updateUI(); renderMap();
+    setInterval(() => { renderMap(); updateUI(); }, 1000);
 }
 
 function updateUI() {
-    document.getElementById('balance').innerText = user.balance.toFixed(0);
+    document.getElementById('balance').innerText = Math.floor(user.balance);
     document.getElementById('diamonds').innerText = user.diamonds.toFixed(1);
+    if(user.buffs.nitro) document.getElementById('buff-nitro').innerText = "АКТИВОВАНО";
+    if(user.buffs.pickaxe) document.getElementById('buff-pickaxe').innerText = "АКТИВОВАНО";
 }
 
 function renderMap() {
     let g = document.getElementById('main-grid'); g.innerHTML = '';
-    user.map.forEach((obj, i) => {
+    // Відображаємо існуючі слоти + кнопку покупки нової землі
+    for(let i=0; i < 20; i++) {
         let d = document.createElement('div');
-        d.className = 'slot';
-        if(!obj) {
-            d.innerHTML = "<span style='opacity:0.2;font-size:30px;'>+</span>";
-            d.onclick = () => openBuild(i);
-        } else {
-            if(obj.type === 'plot') {
-                d.classList.add('item-plot');
-                if(obj.data) {
-                    let left = Math.ceil((obj.data.finish - Date.now())/1000);
-                    d.innerHTML = left <= 0 ? `<b>${obj.data.emoji}</b><br><small>ЗІБРАТИ</small>` : `🌱<br><small>${left}s</small>`;
-                } else { d.innerHTML = "🟫<br><small>ПОРОЖНЬО</small>"; }
+        if(i < user.totalSlots) {
+            let obj = user.map[i];
+            d.className = 'slot';
+            if(!obj) {
+                d.innerHTML = "<span style='opacity:0.3;font-size:30px;'>+</span>";
+                d.onclick = () => openBuild(i);
             } else {
-                d.classList.add('item-stone');
-                let isBig = obj.type === 'stone_big';
-                let now = Date.now();
-                if(obj.next && now < obj.next) {
-                    let left = Math.ceil((obj.next - now)/1000);
-                    d.innerHTML = `⏳<br><small>${Math.floor(left/60)}m</small>`;
+                if(obj.type === 'plot') {
+                    d.classList.add('item-plot');
+                    if(obj.data) {
+                        let left = Math.ceil((obj.data.finish - Date.now())/1000);
+                        d.innerHTML = left <= 0 ? `<b>${obj.data.emoji}</b><br><small>ЗІБРАТИ</small>` : `🌱<br><small>${left}с</small>`;
+                    } else { d.innerHTML = "🟫<br><small>ГОТОВО</small>"; }
                 } else {
-                    d.innerHTML = `${isBig?'💎':'🪨'}<br><small>КЛІК!</small>`;
+                    d.classList.add('item-stone');
+                    let now = Date.now();
+                    if(obj.next && now < obj.next) {
+                        let diff = Math.ceil((obj.next - now)/1000);
+                        d.innerHTML = `⏳<br><small>${Math.floor(diff/60)}хв</small>`;
+                    } else { d.innerHTML = (obj.type==='stone_big'?'💎':'🪨')+"<br><small>КЛІК!</small>"; }
                 }
+                d.onclick = () => handleObject(i);
             }
-            d.onclick = () => handleObject(i);
+        } else if(i === user.totalSlots) {
+            let cost = Math.pow(user.totalSlots, 2) * 200; // Прогресія ціни
+            d.className = 'slot locked';
+            d.innerHTML = `🔒<br><small>КУПИТИ<br>${cost}💰</small>`;
+            d.onclick = () => buyLand(cost);
+        } else {
+            d.className = 'slot locked';
+            d.innerHTML = "🔒";
         }
         g.appendChild(d);
-    });
+    }
 }
 
-function openBuild(i) {
-    selectedSlot = i;
-    let opt = document.getElementById('build-options'); opt.innerHTML = '';
-    let items = [
-        {id: 'plot', name: 'Грядка', emoji: '🟫'},
-        {id: 'stone_small', name: 'М. камінь', emoji: '🪨'},
-        {id: 'stone_big', name: 'В. камінь', emoji: '💎'}
-    ];
-    items.forEach(item => {
-        if(user.inventory[item.id] > 0) {
-            let b = document.createElement('button');
-            b.className = 'm-btn';
-            b.innerHTML = `${item.emoji} Встановити ${item.name} (${user.inventory[item.id]})`;
-            b.onclick = () => placeObject(item.id);
-            opt.appendChild(b);
-        }
-    });
-    if(opt.innerHTML === '') opt.innerHTML = "<p>У вас нічого немає. Купіть у шопі!</p>";
-    document.getElementById('build-modal').style.display = 'flex';
-}
-
-function placeObject(id) {
-    user.inventory[id]--;
-    user.map[selectedSlot] = { type: id, data: null, next: 0 };
-    closeModal(); renderMap(); save();
+function buyLand(cost) {
+    if(user.balance >= cost) {
+        user.balance -= cost;
+        user.totalSlots++;
+        user.map.push(null);
+        save(); renderMap();
+    } else tg.showAlert("Мало монет для розширення!");
 }
 
 function handleObject(i) {
     let obj = user.map[i];
     if(obj.type === 'plot') {
         if(!obj.data) {
-            // Садимо насіння (логіка як раніше)
             let s = Object.keys(user.inventory.seeds).find(k => user.inventory.seeds[k] > 0);
-            if(!s) return tg.showAlert("Купи насіння!");
+            if(!s) return tg.showAlert("Немає насіння!");
+            let crop = crops.find(x => x.e === s);
             user.inventory.seeds[s]--;
-            obj.data = { emoji: s, finish: Date.now() + 10000 }; // 10 сек для тесту
+            let time = user.buffs.nitro ? crop.t * 500 : crop.t * 1000;
+            obj.data = { emoji: s, finish: Date.now() + time, sell: crop.s };
         } else if(Date.now() >= obj.data.finish) {
             user.stats[obj.data.emoji] = (user.stats[obj.data.emoji] || 0) + 1;
             obj.data = null;
-            tg.showAlert("Зібрано!");
         }
     } else {
-        // Логіка камінців
-        if(Date.now() >= obj.next) {
+        if(Date.now() >= (obj.next || 0)) {
             let isBig = obj.type === 'stone_big';
-            user.diamonds += isBig ? 0.8 : 0.3;
-            obj.next = Date.now() + (isBig ? 14400000 : 7200000); // 4 та 2 години
-            updateUI();
+            user.diamonds += (isBig ? 0.8 : 0.3) + (user.buffs.pickaxe ? 0.5 : 0);
+            obj.next = Date.now() + (isBig ? 14400000 : 7200000);
         }
     }
-    renderMap(); save();
+    save();
 }
 
 function buyObject(id, cost) {
-    if(user.balance >= cost) {
-        user.balance -= cost;
-        user.inventory[id]++;
-        updateUI(); save();
-        tg.showAlert("Куплено! Тепер постав його на карту.");
-    } else { tg.showAlert("Мало монет!"); }
+    if(user.balance >= cost) { user.balance -= cost; user.inventory[id]++; save(); tg.showAlert("Куплено! Постав на мапі."); }
+}
+
+function buyBuff(id, cost) {
+    if(user.buffs[id]) return;
+    if(id === 'nitro' && user.balance >= cost) { user.balance -= cost; user.buffs.nitro = true; }
+    else if(id === 'pickaxe' && user.diamonds >= 20) { user.diamonds -= 20; user.buffs.pickaxe = true; }
+    else return tg.showAlert("Не вистачає ресурсів!");
+    save(); updateUI();
+}
+
+function renderShop() {
+    let h = "";
+    crops.forEach(c => {
+        h += `<div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>${c.e} ${c.n} (${c.p}💰)</span>
+            <button onclick="buySeed('${c.e}', ${c.p})" class="m-btn" style="width:auto;margin:0;">КУПИТИ</button>
+        </div>`;
+    });
+    document.getElementById('seed-list').innerHTML = h;
+}
+
+function renderDealer() {
+    let h = ""; let empty = true;
+    for(let e in user.stats) {
+        if(user.stats[e] > 0) {
+            let crop = crops.find(x => x.e === e);
+            h += `<div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                <span>${e} ${crop.n}: ${user.stats[e]} шт.</span>
+                <span style="color:var(--gold)">+${user.stats[e] * crop.s} 💰</span>
+            </div>`;
+            empty = false;
+        }
+    }
+    document.getElementById('inventory-sell').innerHTML = empty ? "Склад порожній" : h;
+}
+
+function sellAll() {
+    let income = 0;
+    for(let e in user.stats) {
+        let crop = crops.find(x => x.e === e);
+        income += user.stats[e] * crop.s;
+        user.stats[e] = 0;
+    }
+    if(income > 0) { user.balance += income; save(); renderDealer(); tg.showAlert("Продано на " + income + " 💰"); }
+}
+
+function openBuild(i) {
+    let opt = document.getElementById('build-options'); opt.innerHTML = '';
+    let items = [{id:'plot',n:'Грядка',e:'🌱'},{id:'stone_small',n:'М. камінь',e:'🪨'},{id:'stone_big',n:'В. камінь',e:'💎'}];
+    items.forEach(it => {
+        if(user.inventory[it.id] > 0) {
+            let b = document.createElement('button'); b.className = 'm-btn';
+            b.innerHTML = `${it.e} ${it.n} (${user.inventory[it.id]} шт.)`;
+            b.onclick = () => { user.inventory[it.id]--; user.map[i] = {type:it.id, data:null, next:0}; closeModal(); renderMap(); save(); };
+            opt.appendChild(b);
+        }
+    });
+    if(!opt.innerHTML) opt.innerHTML = "У вас немає куплених об'єктів!";
+    document.getElementById('build-modal').style.display = 'flex';
+}
+
+function buySeed(e, p) {
+    if(user.balance >= p) { user.balance -= p; user.inventory.seeds[e] = (user.inventory.seeds[e]||0)+1; save(); }
 }
 
 function show(s, b) {
@@ -180,29 +250,10 @@ function show(s, b) {
     document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
     b.classList.add('active');
     if(s === 'shop') renderShop();
-}
-
-function renderShop() {
-    let h = "";
-    [{e:"🌾", n:"Пшениця", p:10}].forEach(c => {
-        h += `<div class="card" style="display:flex;justify-content:space-between;">
-            <span>${c.e} ${c.n}</span>
-            <button onclick="buySeed('${c.e}', ${c.p})" class="m-btn" style="width:auto;">${c.p}💰</button>
-        </div>`;
-    });
-    document.getElementById('seed-list').innerHTML = h;
-}
-
-function buySeed(e, p) {
-    if(user.balance >= p) {
-        user.balance -= p;
-        user.inventory.seeds[e] = (user.inventory.seeds[e]||0)+1;
-        updateUI(); save();
-    }
+    if(s === 'dealer') renderDealer();
 }
 
 function closeModal() { document.getElementById('build-modal').style.display = 'none'; }
-function save() { localStorage.setItem('agro_map_v1', JSON.stringify(user)); }
-setInterval(renderMap, 1000); // Оновлення таймерів на карті
+function save() { localStorage.setItem('agro_empire_v1', JSON.stringify(user)); }
 </script></body></html>
     
