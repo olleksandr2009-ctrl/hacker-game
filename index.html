@@ -3,171 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Hacker Farm Pro</title>
+    <title>Agro Hacker: Level Up</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #34495e; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
+        body { background: #1a1a2e; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
         
-        /* Верхня панель */
-        .header { background: #2c3e50; padding: 15px; display: flex; justify-content: space-between; border-bottom: 3px solid #f1c40f; }
-        .coins { color: #f1c40f; font-weight: bold; font-size: 20px; }
+        /* Авторизація */
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a2e; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .auth-input { padding: 12px; margin: 10px; border-radius: 8px; border: none; width: 80%; background: #16213e; color: white; border: 1px solid #48dbfb; }
+        .auth-btn { background: #48dbfb; color: #1a1a2e; padding: 12px 30px; border: none; border-radius: 8px; font-weight: bold; }
 
-        .screen { display: none; height: 78vh; overflow-y: auto; padding: 15px; box-sizing: border-box; }
+        /* Верхня панель */
+        .header { background: #16213e; padding: 10px; border-bottom: 2px solid #48dbfb; }
+        .stats-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .lvl-bar { width: 100%; height: 8px; background: #0f3460; border-radius: 4px; overflow: hidden; }
+        .lvl-progress { height: 100%; background: #4cd137; width: 0%; transition: 0.5s; }
+
+        .screen { display: none; height: 75vh; overflow-y: auto; padding: 15px; }
         .active-screen { display: block; }
 
-        /* ІЗОМЕТРИЧНІ ГРЯДКИ (ПІД НАХИЛОМ) */
-        .farm-grid { 
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; 
-            margin-top: 30px; perspective: 800px; 
-        }
-        .plot { 
-            height: 100px; background: #5d4037; border: 4px solid #3e2723; border-radius: 15px;
-            display: flex; align-items: center; justify-content: center; position: relative;
-            transform: rotateX(40deg) rotateZ(0deg); 
-            box-shadow: 0 10px 0 #261b18; transition: 0.2s;
-        }
-        .plot:active { transform: rotateX(40deg) scale(0.95); box-shadow: 0 4px 0 #261b18; }
-        .plant { font-size: 50px; position: absolute; bottom: 10px; transition: 0.5s; transform: rotateX(-40deg); }
+        /* Грядки */
+        .farm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; perspective: 600px; }
+        .plot { height: 90px; background: #5d4037; border: 3px solid #3e2723; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transform: rotateX(30deg); box-shadow: 0 8px 0 #261b18; }
+        .locked { background: #2f3640 !important; border: 3px solid #7f8c8d !important; box-shadow: 0 8px 0 #1e272e !important; }
+        .lock-icon { font-size: 24px; filter: grayscale(1); }
+        .plant { font-size: 40px; transform: rotateX(-30deg); }
+        .timer { font-size: 9px; color: #ffca28; transform: rotateX(-30deg); background: rgba(0,0,0,0.6); padding: 2px 4px; border-radius: 4px; margin-top: 5px; }
 
-        /* Вкладки Магазину */
-        .tabs { display: flex; margin-bottom: 15px; background: #2c3e50; border-radius: 10px; overflow: hidden; }
-        .tab-btn { flex: 1; padding: 12px; border: none; color: white; background: none; font-weight: bold; opacity: 0.5; }
-        .tab-btn.active { opacity: 1; background: #27ae60; }
+        /* Магазин */
+        .card { background: #16213e; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #0f3460; }
+        .locked-item { opacity: 0.5; border: 1px dashed #e84118; }
+        .buy-btn { background: #48dbfb; border: none; color: #1a1a2e; padding: 8px 12px; border-radius: 6px; font-weight: bold; }
 
-        .card { background: #2c3e50; padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-        .market-slot { background: #16a085; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 5px solid gold; }
-
-        /* НИЖНІ КНОПКИ */
-        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #1a252f; padding: 10px 0; border-top: 2px solid #2c3e50; }
-        .nav-btn { flex: 1; background: none; border: none; color: #7f8c8d; display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; }
-        .nav-btn.active { color: #f1c40f; }
-        .nav-icon { font-size: 22px; margin-bottom: 3px; }
+        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #16213e; padding: 10px 0; border-top: 2px solid #0f3460; }
+        .nav-btn { flex: 1; background: none; border: none; color: #95a5a6; display: flex; flex-direction: column; align-items: center; font-size: 11px; }
+        .nav-btn.active { color: #48dbfb; }
     </style>
 </head>
 <body>
 
+<div id="auth-screen">
+    <h2 style="color:#48dbfb">FARM LOGIN</h2>
+    <input type="text" id="username" class="auth-input" placeholder="Нікнейм">
+    <input type="password" id="password" class="auth-input" placeholder="Пароль">
+    <button class="auth-btn" onclick="login()">УВІЙТИ</button>
+</div>
+
 <div class="header">
-    <div class="coins">💰 <span id="balance">500</span></div>
-    <div style="font-size: 12px;">Склад: <span id="storage-count">0</span></div>
+    <div class="stats-line">
+        <span style="color:#f1c40f">💰 <span id="balance">10.0</span></span>
+        <span style="color:#48dbfb">💎 <span id="diamonds">5</span></span>
+        <span id="lvl-text">LVL 1</span>
+    </div>
+    <div class="lvl-bar"><div id="lvl-progress" class="lvl-progress"></div></div>
+    <div style="font-size: 10px; margin-top: 5px; color: #bdc3c7;">Завдання: Зібрати Пшениці <span id="quest-count">0</span>/150</div>
 </div>
 
 <div id="farm-screen" class="screen active-screen">
     <div class="farm-grid">
-        <div class="plot" onclick="farm(0)"><div class="plant" id="p0"></div></div>
-        <div class="plot" onclick="farm(1)"><div class="plant" id="p1"></div></div>
-        <div class="plot" onclick="farm(2)"><div class="plant" id="p2"></div></div>
-        <div class="plot" onclick="farm(3)"><div class="plant" id="p3"></div></div>
+        <div class="plot" onclick="handlePlot(0)"><div id="p0" class="plant"></div><div id="t0" class="timer" style="display:none"></div></div>
+        <div class="plot" onclick="handlePlot(1)"><div id="p1" class="plant"></div><div id="t1" class="timer" style="display:none"></div></div>
+        <div class="plot locked" id="lock2" onclick="unlockPlot(2)"><div class="lock-icon">🔒</div><div style="font-size:10px; transform:rotateX(-30deg)">10 💎</div></div>
+        <div class="plot locked" id="lock3" onclick="unlockPlot(3)"><div class="lock-icon">🔒</div><div style="font-size:10px; transform:rotateX(-30deg)">25 💎</div></div>
     </div>
 </div>
 
 <div id="shop-screen" class="screen">
-    <div class="tabs">
-        <button id="btn-buy" class="tab-btn active" onclick="switchShop('buy')">КУПИТИ</button>
-        <button id="btn-sell" class="tab-btn" onclick="switchShop('sell')">РИНОК</button>
+    <div class="card">
+        <div><b>🌾 Пшениця</b><br><small>0.4💰 | 30с</small></div>
+        <button class="buy-btn" onclick="buySeed(0.4, '🌾', 1.2, 30)">КУПИТИ</button>
     </div>
-
-    <div id="buy-content">
-        <div class="card"><span>🌾 Пшениця</span><button onclick="buySeed(20, '🌾')">20$</button></div>
-        <div class="card"><span>🥔 Бараболя</span><button onclick="buySeed(40, '🥔')">40$</button></div>
-        <div class="card"><span>🌽 Кукурудза</span><button onclick="buySeed(60, '🌽')">60$</button></div>
-        <div class="card"><span>🥕 Морква</span><button onclick="buySeed(30, '🥕')">30$</button></div>
-        <div class="card"><span>🌻 Соняшник</span><button onclick="buySeed(100, '🌻')">100$</button></div>
-        <div class="card"><span>🎃 Гарбуз</span><button onclick="buySeed(120, '🎃')">120$</button></div>
-        <div class="card"><span>🍅 Томати</span><button onclick="buySeed(50, '🍅')">50$</button></div>
-        <div class="card"><span>🍉 Кавун</span><button onclick="buySeed(200, '🍉')">200$</button></div>
-    </div>
-
-    <div id="sell-content" style="display:none;">
-        <button onclick="postToMarket()" style="width:100%; padding:12px; background:#f1c40f; color:#000; border:none; border-radius:8px; font-weight:bold; margin-bottom:15px;">ВИТАВИТИ ТОВАР</button>
-        <div id="my-listings"></div>
+    <div class="card" id="melon-card">
+        <div><b>🍉 Кавун (LVL 2)</b><br><small>10.0💰 | 8год</small></div>
+        <div id="melon-lock">🔒 Закрито</div>
+        <button class="buy-btn" id="melon-btn" style="display:none" onclick="buySeed(10, '🍉', 15, 28800)">КУПИТИ</button>
     </div>
 </div>
 
 <div class="footer">
-    <button class="nav-btn" onclick="showScreen('shop', this)"><span class="nav-icon">🛒</span>МАГАЗИН</button>
-    <button class="nav-btn active" onclick="showScreen('farm', this)"><span class="nav-icon">🚜</span>ФЕРМА</button>
-    <button class="nav-btn" onclick="tg.showAlert('Тут будуть твої досягнення!')"><span class="nav-icon">🏆</span>ВИВІД</button>
-    <button class="nav-btn" onclick="tg.showAlert('Налаштування')"><span class="nav-icon">⚙️</span>ОПЦІЇ</button>
+    <button class="nav-btn active" onclick="showScreen('farm', this)">🚜 ФЕРМА</button>
+    <button class="nav-btn" onclick="showScreen('shop', this)">🛒 МАГАЗИН</button>
 </div>
 
 <script>
     let tg = window.Telegram.WebApp;
-    tg.expand();
+    let balance = 10.0;
+    let diamonds = 5;
+    let level = 1;
+    let wheatCollected = 0;
+    let inventory = [];
+    let plots = [null, null, null, null];
+    let unlockedPlots = [true, true, false, false];
 
-    let balance = 500;
-    let seeds = []; // Те, що купили
-    let storage = []; // Те, що виростили
-    let marketCount = 0;
-    let states = [0, 0, 0, 0]; // 0-пусто, 1-росте, 2-готово, 3-зібрано
-
-    function showScreen(id, btn) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-        document.getElementById(id + '-screen').classList.add('active-screen');
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    function login() {
+        document.getElementById('auth-screen').style.display = 'none';
     }
 
-    function switchShop(type) {
-        document.getElementById('buy-content').style.display = type === 'buy' ? 'block' : 'none';
-        document.getElementById('sell-content').style.display = type === 'sell' ? 'block' : 'none';
-        document.getElementById('btn-buy').classList.toggle('active', type === 'buy');
-        document.getElementById('btn-sell').classList.toggle('active', type === 'sell');
-    }
-
-    function buySeed(price, type) {
+    function buySeed(price, type, sell, time) {
         if (balance >= price) {
             balance -= price;
-            seeds.push(type);
+            inventory.push({type: type, sell: sell, time: time});
             updateUI();
-        } else { tg.showAlert("Не вистачає монет!"); }
+        } else { tg.showAlert("Мало монет!"); }
     }
 
-    function farm(id) {
+    function handlePlot(id) {
+        if (!unlockedPlots[id]) return;
         let p = document.getElementById('p' + id);
-        if (states[id] === 0 && seeds.length > 0) {
-            let crop = seeds.pop();
-            states[id] = 1;
+        let t = document.getElementById('t' + id);
+
+        if (!plots[id] && inventory.length > 0) {
+            let seed = inventory.pop();
+            plots[id] = { ...seed, finish: Date.now() + (seed.time * 1000), ready: false };
             p.innerText = "🌱";
-            p.style.transform = "rotateX(-40deg) scale(0.5)";
-            
-            setTimeout(() => { p.innerText = "🌿"; p.style.transform = "rotateX(-40deg) scale(0.8)"; }, 3000);
-            setTimeout(() => { p.innerText = crop; p.style.transform = "rotateX(-40deg) scale(1.2)"; states[id] = 2; }, 6000);
-            updateUI();
-        } else if (states[id] === 2) {
-            let cropType = p.innerText;
-            storage.push(cropType); // Додаємо вирощене на склад
+            t.style.display = "block";
+            updatePlot(id);
+        } else if (plots[id] && plots[id].ready) {
+            if (plots[id].type === '🌾') {
+                wheatCollected += 1;
+                checkLevel();
+            }
+            balance += plots[id].sell;
+            plots[id] = null;
             p.innerText = "";
-            states[id] = 0;
+            t.style.display = "none";
             updateUI();
-            tg.showAlert("Зібрано! Товар тепер на складі.");
         }
     }
 
-    function postToMarket() {
-        if (marketCount >= 3) { tg.showAlert("Максимум 3 лоти!"); return; }
-        if (storage.length === 0) { tg.showAlert("Твій склад порожній! Спочатку вирости щось."); return; }
+    function unlockPlot(id) {
+        let price = id === 2 ? 10 : 25;
+        if (diamonds >= price) {
+            tg.showConfirm(`Відкрити нову грядку за ${price} 💎?`, (confirm) => {
+                if (confirm) {
+                    diamonds -= price;
+                    unlockedPlots[id] = true;
+                    let el = document.getElementById('lock' + id);
+                    el.classList.remove('locked');
+                    el.innerHTML = `<div id="p${id}" class="plant"></div><div id="t${id}" class="timer" style="display:none"></div>`;
+                    updateUI();
+                }
+            });
+        } else { tg.showAlert("Не вистачає алмазів!"); }
+    }
 
-        let item = storage.pop();
-        let price = prompt("За яку ціну продати " + item + "?", "100");
-        let amount = prompt("Скільки штук?", "1");
+    function checkLevel() {
+        let progress = (wheatCollected / 150) * 100;
+        document.getElementById('lvl-progress').style.width = Math.min(progress, 100) + "%";
+        document.getElementById('quest-count').innerText = wheatCollected;
 
-        if (price > 0 && amount > 0) {
-            marketCount++;
-            let div = document.createElement('div');
-            div.className = 'market-slot';
-            div.innerHTML = `📦 <b>${item}</b> | Кількість: ${amount} | Ціна: ${price}$ <span style="float:right; color:red" onclick="this.parentElement.remove(); marketCount--;">✖</span>`;
-            document.getElementById('my-listings').appendChild(div);
-            updateUI();
-        } else {
-            storage.push(item); // Повертаємо назад, якщо скасували
+        if (wheatCollected >= 150 && level < 2) {
+            level = 2;
+            tg.showAlert("ВІТАЄМО! Рівень 2 досягнуто! Кавуни розблоковано!");
+            document.getElementById('lvl-text').innerText = "LVL 2";
+            document.getElementById('melon-lock').style.display = "none";
+            document.getElementById('melon-btn').style.display = "block";
+            document.getElementById('melon-card').classList.remove('locked-item');
         }
+    }
+
+    function updatePlot(id) {
+        if (!plots[id]) return;
+        let diff = plots[id].finish - Date.now();
+        if (diff <= 0) {
+            plots[id].ready = true;
+            document.getElementById('p' + id).innerText = plots[id].type;
+            document.getElementById('t' + id).innerText = "ГОТОВО!";
+        } else {
+            let s = Math.floor(diff / 1000);
+            document.getElementById('t' + id).innerText = s + "s";
+            setTimeout(() => updatePlot(id), 1000);
+        }
+    }
+
+    function showScreen(s, b) {
+        document.querySelectorAll('.screen').forEach(x => x.classList.remove('active-screen'));
+        document.getElementById(s + '-screen').classList.add('active-screen');
+        document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
     }
 
     function updateUI() {
-        document.getElementById('balance').innerText = balance;
-        document.getElementById('storage-count').innerText = storage.length;
+        document.getElementById('balance').innerText = balance.toFixed(1);
+        document.getElementById('diamonds').innerText = diamonds;
     }
 </script>
 </body>
-                                                                                          </html>
-            
+</html>
