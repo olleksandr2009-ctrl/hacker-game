@@ -14,11 +14,12 @@ body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:h
 .market-panel{background:#1e272e;padding:12px;border-radius:12px;border:1px solid var(--accent);margin-bottom:15px;}
 .m-input{width:100%;padding:10px;margin:5px 0;border-radius:5px;border:none;background:#0f3460;color:white;box-sizing:border-box;}
 .m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:12px;width:100%;border-radius:8px;font-weight:bold;margin-top:10px;}
+.sell-all-btn{background:var(--red);color:white;border:none;padding:5px 10px;border-radius:5px;font-size:10px;margin-top:5px;width:100%;}
 .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:10px 0;border-top:2px solid #0f3460;}
 .nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:10px;}
 .nav-btn.active{color:var(--accent);}
-.lvl-btn{background:rgba(76,209,55,0.2);border:1px solid var(--green);color:var(--green);padding:4px 8px;border-radius:6px;font-size:12px;cursor:pointer;}
-.scarecrow{font-size:50px;text-align:center;margin:10px 0;filter:drop-shadow(0 0 5px rgba(0,0,0,0.5));}
+.lvl-btn{background:rgba(76,209,55,0.2);border:1px solid var(--green);color:var(--green);padding:4px 8px;border-radius:6px;font-size:12px;}
+.scarecrow{font-size:50px;text-align:center;margin:5px 0;}
 </style></head><body onload="init()">
 <div class="header">
     <span style="color:var(--gold)">💰 <span id="balance">10.0</span></span>
@@ -27,59 +28,117 @@ body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:h
 </div>
 <div id="farm-screen" class="screen active-screen">
     <div class="scarecrow">👨‍🌾</div>
-    <div style="text-align:center;font-size:11px;margin-bottom:10px;color:#aaa;">Склад: <span id="shop-limit">0</span>/1000</div>
+    <div style="text-align:center;font-size:11px;margin-bottom:10px;color:#aaa;">Склад магазину: <span id="shop-limit">0</span>/1000</div>
     <div class="farm-grid" id="farm-grid"></div>
 </div>
 <div id="shop-screen" class="screen">
-    <h3 style="color:var(--accent)">🛒 МАГАЗИН</h3>
+    <h3 style="color:var(--accent)">🛒 МАГАЗИН (СКУПЩИК)</h3>
+    <div style="background:var(--card);padding:10px;border-radius:10px;margin-bottom:15px;font-size:12px;border:1px solid var(--red);">
+        <b>Здати Скупщику:</b> Швидкі гроші (ціна на 30% нижча, ніж на ринку)
+        <button class="sell-all-btn" onclick="sellEverythingToShop()">ЗДАТИ ВЕСЬ ВРОЖАЙ</button>
+    </div>
     <div id="seed-list"></div>
 </div>
 <div id="market-screen" class="screen">
-    <h3 style="color:var(--gold)">🏪 РИНОК</h3>
+    <h3 style="color:var(--gold)">⚖️ АУКЦІОН (ДЛЯ ЛЮДЕЙ)</h3>
     <div class="market-panel">
         <select id="sell-item" class="m-input"></select>
         <input type="number" id="sell-amount" class="m-input" placeholder="Кількість">
-        <select id="sell-currency" class="m-input">
-            <option value="gold">Золото (💰)</option>
-            <option value="diamond">Алмази (💎)</option>
-        </select>
-        <input type="number" id="sell-price" class="m-input" step="0.1" placeholder="Ціна">
-        <button class="m-btn" onclick="postToMarket()">ПРОДАТИ</button>
+        <input type="number" id="sell-price" class="m-input" step="0.1" placeholder="Ваша ціна за все">
+        <button class="m-btn" onclick="postToAuction()">ВИСТАВИТИ ЛОТ</button>
     </div>
-    <div id="stats-display" style="font-size:12px;background:var(--card);padding:10px;border-radius:8px;"></div>
+    <div id="market-lots">
+        <h4 style="margin:5px 0">Активні лоти на ринку:</h4>
+        <div id="active-lots-list"></div>
+    </div>
 </div>
 <div id="exchange-screen" class="screen">
-    <h3 style="text-align:center">📈 БІРЖА</h3>
+    <h3 style="text-align:center">📈 БІРЖА АЛМАЗІВ</h3>
     <div class="card" style="flex-direction:column;padding:20px;text-align:center;">
         <div style="font-size:24px;margin-bottom:5px;font-weight:bold;">1 💎</div>
         <div style="font-size:16px;margin-bottom:15px;color:#aaa;">Ціна: <span id="d-price">500</span> 💰 <span id="trend">━</span></div>
-        <button class="buy-btn" style="width:100%;height:45px;" onclick="exchange()">КУПИТИ 1 💎</button>
+        <button class="buy-btn" style="width:100%;height:45px;" onclick="exchange()">ОБМІНЯТИ</button>
     </div>
 </div>
 <div class="footer">
     <button class="nav-btn active" onclick="show('farm',this)">🚜 ФЕРМА</button>
     <button class="nav-btn" onclick="show('shop',this)">🛒 ШОП</button>
-    <button class="nav-btn" onclick="show('market',this)">🏪 РИНОК</button>
+    <button class="nav-btn" onclick="show('market',this)">⚖️ РИНОК</button>
     <button class="nav-btn" onclick="show('exchange',this)">📈 БІРЖА</button>
 </div>
 <script>
 let tg=window.Telegram.WebApp;tg.expand();
-let user={balance:10.0,diamonds:0,dFrags:0,level:1,inventory:{},stats:{"🌾":0,"🥕":0,"🥔":0,"🍅":0,"🌽":0,"🌻":0,"🎃":0,"🍉":0},shopLimit:400,lastStock:Date.now(),lastPrice:Date.now(),dPrice:500,dOldPrice:500,unlockedPlots:[true,true,false,false],plots:[null,null,null,null]};
+let user={balance:10.0,diamonds:0,level:1,inventory:{},stats:{"🌾":0,"🥕":0,"🥔":0,"🍅":0,"🌽":0,"🌻":0,"🎃":0,"🍉":0},shopLimit:400,lastStock:Date.now(),lastPrice:Date.now(),dPrice:500,dOldPrice:500,unlockedPlots:[true,true,false,false],plots:[null,null,null,null],activeLots:[]};
 const crops=[{id:0,name:"Пшениця",emoji:"🌾",price:0.4,sell:1.2,time:60,lvl:1},{id:1,name:"Морква",emoji:"🥕",price:0.8,sell:2.0,time:180,lvl:2},{id:2,name:"Бараболя",emoji:"🥔",price:1.5,sell:3.5,time:600,lvl:3},{id:3,name:"Томати",emoji:"🍅",price:2.5,sell:6.0,time:1200,lvl:4},{id:4,name:"Кукурудза",emoji:"🌽",price:4.0,sell:10.0,time:3600,lvl:5},{id:5,name:"Соняшник",emoji:"🌻",price:6.0,sell:15.0,time:7200,lvl:6},{id:6,name:"Гарбуз",emoji:"🎃",price:8.0,sell:20.0,time:14400,lvl:7},{id:7,name:"Кавун",emoji:"🍉",price:10.0,sell:15.0,time:28800,lvl:8}];
-function save(){localStorage.setItem('agro_v6',JSON.stringify(user));}
-function init(){let s=localStorage.getItem('agro_v6');if(s){user=JSON.parse(s);checkStock();updateMarket();}renderFarm();updateUI();setInterval(save,5000);setInterval(updateMarket,60000);}
+
+function init(){let s=localStorage.getItem('agro_v7');if(s){user=JSON.parse(s);checkStock();updateMarket();checkLots();}renderFarm();updateUI();setInterval(save,5000);setInterval(checkLots,10000);}
+function save(){localStorage.setItem('agro_v7',JSON.stringify(user));}
+
 function checkStock(){let h=Math.floor((Date.now()-user.lastStock)/18000000);if(h>0){user.shopLimit=Math.min(user.shopLimit+(h*200),1000);user.lastStock=Date.now();}}
-function updateMarket(){if(Date.now()-user.lastPrice>1800000){user.dOldPrice=user.dPrice;user.dPrice=Math.floor(400+Math.random()*250);user.lastPrice=Date.now();}let t=document.getElementById('trend');t.innerText=user.dPrice>user.dOldPrice?"📈":"📉";t.style.color=user.dPrice>user.dOldPrice?"#4cd137":"#e84118";document.getElementById('d-price').innerText=user.dPrice;}
+
+function updateMarket(){if(Date.now()-user.lastPrice>1800000){user.dOldPrice=user.dPrice;user.dPrice=Math.floor(400+Math.random()*250);user.lastPrice=Date.now();}let t=document.getElementById('trend');t.innerText=user.dPrice>user.dOldPrice?"📈":"📉";t.style.color=user.dPrice>user.dOldPrice?"#green":"#red";document.getElementById('d-price').innerText=user.dPrice;}
+
+// ФУНКЦІЯ АУКЦІОНУ
+function postToAuction(){
+    let e=document.getElementById('sell-item').value,a=parseInt(document.getElementById('sell-amount').value),p=parseFloat(document.getElementById('sell-price').value);
+    let crop=crops.find(x=>x.emoji==e);
+    let maxPrice=crop.sell*a*2; // Макс ціна - не більше х2 від базової
+    if(!a||a<=0||p<=0||(user.stats[e]||0)<a)return tg.showAlert("Недостатньо врожаю!");
+    if(p>maxPrice)return tg.showAlert(`Занадто дорого! Люди не куплять. Макс ціна: ${maxPrice.toFixed(1)}💰`);
+
+    user.stats[e]-=a;
+    user.activeLots.push({emoji:e,amount:a,price:p,finish:Date.now()+(Math.random()*20000+10000)});
+    tg.showAlert("Лот виставлено на аукціон!");
+    show('market',document.querySelectorAll('.nav-btn')[2]);
+    updateUI();
+}
+
+function checkLots(){
+    let now=Date.now();
+    user.activeLots=user.activeLots.filter(lot=>{
+        if(now>lot.finish){
+            user.balance+=lot.price;
+            tg.showPopup({title:"Ринок",message:`Ваш лот (${lot.amount} ${lot.emoji}) було куплено за ${lot.price}💰!`});
+            updateUI();
+            return false;
+        }
+        return true;
+    });
+    renderLots();
+}
+
+function renderLots(){
+    let l=document.getElementById('active-lots-list');
+    if(!l)return;
+    l.innerHTML=user.activeLots.map(lot=>`<div class="card"><span>${lot.emoji} ${lot.amount} од.</span><span>${lot.price}💰 (очікування...)</span></div>`).join('')||'<small>Немає активних лотів</small>';
+}
+
+// ФУНКЦІЯ СКУПЩИКА
+function sellEverythingToShop(){
+    let total=0;
+    for(let e in user.stats){
+        let crop=crops.find(x=>x.emoji==e);
+        if(user.stats[e]>0){
+            total+=(user.stats[e]*crop.sell*0.7); // Ціна на 30% нижча
+            user.stats[e]=0;
+        }
+    }
+    if(total==0)return tg.showAlert("Ваш склад порожній!");
+    user.balance+=total;
+    updateUI();
+    tg.showAlert(`Ви здали весь врожай скупщику за ${total.toFixed(1)}💰`);
+}
+
 function renderFarm(){let g=document.getElementById('farm-grid');g.innerHTML='';user.unlockedPlots.forEach((u,i)=>{let p=document.createElement('div');p.className=`plot ${u?'':'locked'}`;if(!u){let c=i==2?10:25;p.innerHTML=`🔒 ${c}💎`;p.onclick=()=>unlock(i,c);}else{p.innerHTML=`<div id="p${i}" class="plant"></div><div id="t${i}" class="timer" style="display:none"></div>`;p.onclick=()=>handlePlot(i);if(user.plots[i])startTimer(i);}g.appendChild(p);});}
-function handlePlot(i){if(!user.plots[i]){let e=Object.keys(user.inventory).find(k=>user.inventory[k]>0);if(!e)return tg.showAlert("Немає насіння!");let c=crops.find(x=>x.emoji==e);user.inventory[e]--;user.plots[i]={...c,finish:Date.now()+(c.time*1000),ready:false};startTimer(i);}else if(user.plots[i].ready){user.stats[user.plots[i].emoji]++;user.balance+=user.plots[i].sell;user.plots[i]=null;checkLvl();renderFarm();updateUI();}}
+function handlePlot(i){if(!user.plots[i]){let e=Object.keys(user.inventory).find(k=>user.inventory[k]>0);if(!e)return tg.showAlert("Купіть насіння!");let c=crops.find(x=>x.emoji==e);user.inventory[e]--;user.plots[i]={...c,finish:Date.now()+(c.time*1000),ready:false};startTimer(i);}else if(user.plots[i].ready){user.stats[user.plots[i].emoji]++;user.plots[i]=null;checkLvl();renderFarm();updateUI();}}
 function startTimer(i){let p=user.plots[i];let it=setInterval(()=>{let d=p.finish-Date.now();let elP=document.getElementById('p'+i),elT=document.getElementById('t'+i);if(!elP)return clearInterval(it);if(d<=0){p.ready=true;elP.innerText=p.emoji;elT.innerText="ГОТОВО!";clearInterval(it);}else{elP.innerText="🌱";elT.style.display="block";let s=Math.floor(d/1000);elT.innerText=s>60?Math.floor(s/60)+"m":s+"s";}},1000);}
-function buy(i){let c=crops[i];if(user.level<c.lvl||user.shopLimit<=0||user.balance<c.price)return tg.showAlert("Неможливо купити!");user.balance-=c.price;user.shopLimit--;user.inventory[c.emoji]=(user.inventory[c.emoji]||0)+1;updateUI();renderShop();}
-function postToMarket(){let e=document.getElementById('sell-item').value,a=parseInt(document.getElementById('sell-amount').value),c=document.getElementById('sell-currency').value,p=parseFloat(document.getElementById('sell-price').value);if(!a||a<=0||p<=0||(user.stats[e]||0)<a)return tg.showAlert("Помилка!");user.stats[e]-=a;if(c=='gold')user.balance+=p*0.95;else{user.dFrags+=p;let w=Math.floor(user.dFrags);user.diamonds+=w;user.dFrags-=w;}updateUI();tg.showAlert("Продано!");}
-function checkLvl(){if(user.level==1&&user.stats["🌾"]>=50)user.level=2;if(user.level==2&&user.stats["🌾"]>=150&&user.stats["🥕"]>=40)user.level=3;}
+function buy(i){let c=crops[i];if(user.level<c.lvl||user.shopLimit<=0||user.balance<c.price)return tg.showAlert("Помилка!");user.balance-=c.price;user.shopLimit--;user.inventory[c.emoji]=(user.inventory[c.emoji]||0)+1;updateUI();renderShop();}
+function checkLvl(){if(user.level==1&&user.stats["🌾"]>=50)user.level=2;if(user.level==2&&user.stats["🌾"]>=150&&user.stats["🥕"]>=40)user.level=3;updateUI();}
 function unlock(i,c){if(user.diamonds>=c){user.diamonds-=c;user.unlockedPlots[i]=true;renderFarm();updateUI();}}
-function updateUI(){document.getElementById('balance').innerText=user.balance.toFixed(1);document.getElementById('diamonds').innerText=user.diamonds+(user.dFrags>0?`+${user.dFrags.toFixed(1)}`:"");document.getElementById('shop-limit').innerText=user.shopLimit;document.getElementById('lvl-display').innerText="LVL "+user.level;}
-function renderShop(){let h='';crops.forEach((c,i)=>{let l=user.level<c.lvl;h+=`<div class="card ${l?'locked':''}"><div><b>${c.emoji}${c.name}</b><br><small>В тебе: ${user.inventory[c.emoji]||0}</small></div>${l?'🔒':`<button class="buy-btn" onclick="buy(${i})">${c.price}💰</button>`}</div>`;});document.getElementById('seed-list').innerHTML=h;}
-function show(s,b){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active-screen'));document.getElementById(s+'-screen').classList.add('active-screen');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(s=='shop')renderShop();if(s=='market'){let o='';crops.forEach(c=>o+=`<option value="${c.emoji}">${c.emoji} ${c.name} (${user.stats[c.emoji]||0})</option>`);document.getElementById('sell-item').innerHTML=o;let st='';for(let e in user.stats)if(user.stats[e]>0)st+=`${e}:${user.stats[e]} `;document.getElementById('stats-display').innerText=st||'Пусто';}}
-function exchange(){if(user.balance>=user.dPrice){user.balance-=user.dPrice;user.diamonds++;updateUI();}}
-function showLvlInfo(){let req="";if(user.level==1)req="Для 2 рівня треба: 50 🌾 Пшениці";else if(user.level==2)req="Для 3 рівня треба: 150 🌾 Пшениці та 40 🥕 Моркви";else req="Максимальний рівень на сьогодні!";tg.showPopup({title:"Ваш прогрес",message:req});}
+function updateUI(){document.getElementById('balance').innerText=user.balance.toFixed(1);document.getElementById('diamonds').innerText=user.diamonds;document.getElementById('shop-limit').innerText=user.shopLimit;document.getElementById('lvl-display').innerText="LVL "+user.level;}
+function renderShop(){let h='';crops.forEach((c,i)=>{let l=user.level<c.lvl;h+=`<div class="card ${l?'locked':''}"><div><b>${c.emoji}${c.name}</b><br><small>У вас: ${user.inventory[c.emoji]||0}</small></div>${l?'🔒':`<button class="buy-btn" onclick="buy(${i})">${c.price}💰</button>`}</div>`;});document.getElementById('seed-list').innerHTML=h;}
+function show(s,b){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active-screen'));document.getElementById(s+'-screen').classList.add('active-screen');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(s=='shop')renderShop();if(s=='market'){let o='';crops.forEach(c=>o+=`<option value="${c.emoji}">${c.emoji} ${c.name} (${user.stats[c.emoji]||0})</option>`);document.getElementById('sell-item').innerHTML=o;let st='';for(let e in user.stats)if(user.stats[e]>0)st+=`${e}:${user.stats[e]} `;document.getElementById('stats-display').innerText=st||'Склад врожаю порожній';renderLots();}}
+function exchange(){if(user.balance>=user.dPrice){user.balance-=user.dPrice;user.diamonds++;updateUI();}else{tg.showAlert("Мало монет!");}}
+function showLvlInfo(){let req=user.level==1?"50 🌾":"150 🌾 та 40 🥕";tg.showPopup({title:"Прогрес",message:`Для наступного рівня треба зібрати: ${req}`});}
 </script></body></html>
+    
