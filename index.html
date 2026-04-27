@@ -3,119 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Multi-Plot Farm</title>
+    <title>Real Wheat Farm</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #546e7a; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
+        body { background: #37474f; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
         
-        /* Верхня панель */
-        .header { background: rgba(0,0,0,0.5); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #ffca28; }
-        .coins { color: #ffca28; font-weight: bold; font-size: 22px; text-shadow: 1px 1px 2px black; }
+        /* Панель стану */
+        .header { background: #263238; padding: 15px; display: flex; justify-content: space-between; border-bottom: 2px solid #ffca28; }
+        .coins { color: #ffca28; font-weight: bold; font-size: 20px; }
 
-        /* Сітка грядок */
-        .farm-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 20px; 
-            padding: 20px; 
-            margin-top: 50px;
-            perspective: 1000px;
-        }
+        /* Екрани */
+        .screen { display: none; height: 75vh; overflow-y: auto; padding: 20px; }
+        .active-screen { display: block; }
 
+        /* Грядки */
+        .farm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .plot { 
-            width: 100%; height: 100px; 
-            background: #5d4037; border: 3px solid #3e2723;
-            border-radius: 12px;
-            position: relative;
-            transform: rotateX(30deg);
-            box-shadow: 0 8px 0 #261b18;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.1s;
+            height: 100px; background: #4e342e; border: 3px solid #3e2723; border-radius: 15px;
+            display: flex; align-items: center; justify-content: center; position: relative;
+            transform: rotateX(20deg); box-shadow: 0 6px 0 #1b1b1b;
         }
-        .plot:active { transform: rotateX(30deg) translateY(4px); box-shadow: 0 4px 0 #261b18; }
+        .plant { font-size: 40px; transition: transform 0.5s; }
 
-        .plant { font-size: 45px; position: absolute; transition: 0.3s; }
+        /* Магазин */
+        .shop-item { background: #455a64; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .shop-img { font-size: 30px; background: #263238; padding: 10px; border-radius: 10px; }
 
-        /* Нижня навігація (кнопки) */
-        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #263238; padding: 10px 0; border-top: 2px solid #455a64; }
-        .nav-btn { 
-            flex: 1; background: none; border: none; color: white; 
-            display: flex; flex-direction: column; align-items: center; 
-            font-size: 11px; font-weight: bold; opacity: 0.7;
-        }
-        .nav-btn.active { opacity: 1; color: #ffca28; }
-        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+        /* Футер */
+        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #212121; padding: 10px 0; }
+        .nav-btn { flex: 1; background: none; border: none; color: #9e9e9e; display: flex; flex-direction: column; align-items: center; font-size: 10px; }
+        .nav-btn.active { color: #ffca28; }
+        .nav-icon { font-size: 20px; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="coins">🪙 <span id="balance">0</span></div>
-    <div style="background: #2e7d32; padding: 5px 10px; border-radius: 20px; font-size: 12px;">УРОВЕНЬ 1</div>
+    <div class="coins">🪙 <span id="balance">300</span></div>
+    <div id="price-tag" style="font-size: 12px; color: #81c784;">Ціна зерна: 20$ 📈</div>
 </div>
 
-<div class="farm-grid">
-    <div class="plot" onclick="workPlot(this, 0)"><div class="plant" id="p0"></div></div>
-    <div class="plot" onclick="workPlot(this, 1)"><div class="plant" id="p1"></div></div>
-    <div class="plot" onclick="workPlot(this, 2)"><div class="plant" id="p2"></div></div>
-    <div class="plot" onclick="workPlot(this, 3)"><div class="plant" id="p3"></div></div>
+<div id="farm-screen" class="screen active-screen">
+    <div class="farm-grid">
+        <div class="plot" onclick="handlePlot(0)"><div class="plant" id="p0"></div></div>
+        <div class="plot" onclick="handlePlot(1)"><div class="plant" id="p1"></div></div>
+        <div class="plot" onclick="handlePlot(2)"><div class="plant" id="p2"></div></div>
+        <div class="plot" onclick="handlePlot(3)"><div class="plant" id="p3"></div></div>
+    </div>
+</div>
+
+<div id="shop-screen" class="screen">
+    <h3 style="text-align: center;">НАСІННЯ ТА РОСЛИНИ</h3>
+    <div class="shop-item">
+        <div class="shop-img">🌾</div>
+        <div><b>Пшениця "Еліта"</b><br><small>Продавець: АгроМаркет</small></div>
+        <button onclick="buy(100)" style="background: #4caf50; border: none; color: white; padding: 8px; border-radius: 5px;">100$</button>
+    </div>
+    <div class="shop-item">
+        <div class="shop-img">🌽</div>
+        <div><b>Кукурудза</b><br><small>Продавець: Фермер-М</small></div>
+        <button onclick="alert('Доступно з 2 рівня!')" style="background: #757575; border: none; color: white; padding: 8px; border-radius: 5px;">ЗАКРИТО</button>
+    </div>
+</div>
+
+<div id="cash-screen" class="screen">
+    <div style="text-align: center; margin-top: 50px;">
+        <span style="font-size: 50px;">💰</span>
+        <h2>Ваш гаманець</h2>
+        <p>Мінімальна сума для виводу: 1000 монет</p>
+        <button onclick="tg.showAlert('Недостатньо коштів!')" style="background: #ff9800; border: none; color: white; padding: 15px 30px; border-radius: 10px; font-weight: bold;">ВИВЕСТИ НА ТОН</button>
+    </div>
 </div>
 
 <div class="footer">
-    <button class="nav-btn" onclick="tg.showAlert('Магазин насіння скоро відкриється!')">
-        <span class="nav-icon">📦</span>МАГАЗИН
-    </button>
-    <button class="nav-btn active">
-        <span class="nav-icon">🚜</span>ФЕРМА
-    </button>
-    <button class="nav-btn" onclick="tg.showConfirm('Бажаєте вивести зароблені кошти?')">
-        <span class="nav-icon">💰</span>ВИВІД
-    </button>
-    <button class="nav-btn" onclick="tg.showAlert('Налаштування профілю')">
-        <span class="nav-icon">⚙️</span>ОПЦІЇ
-    </button>
+    <button class="nav-btn" onclick="showScreen('shop', this)"><span class="nav-icon">📦</span>МАГАЗИН</button>
+    <button class="nav-btn active" onclick="showScreen('farm', this)"><span class="nav-icon">🚜</span>ФЕРМА</button>
+    <button class="nav-btn" onclick="showScreen('cash', this)"><span class="nav-icon">💵</span>ВИВІД</button>
+    <button class="nav-btn" onclick="tg.showAlert('Налаштування в розробці')"><span class="nav-icon">⚙️</span>ОПЦІЇ</button>
 </div>
 
 <script>
     let tg = window.Telegram.WebApp;
     tg.expand();
     
-    let balance = 0;
-    let plotStates = [0, 0, 0, 0]; // 0-порожньо, 1-росте, 2-готово
+    let balance = 300;
+    let wheatPrice = 20;
+    let states = [0, 0, 0, 0]; // 0-пусто, 1-паростки, 2-зелена, 3-золота
 
-    function workPlot(element, id) {
-        let plant = document.getElementById('p' + id);
+    // Перемикання екранів
+    function showScreen(screenId, btn) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+        document.getElementById(screenId + '-screen').classList.add('active-screen');
         
-        if (plotStates[id] === 0) {
-            // Посадка
-            plotStates[id] = 1;
-            plant.innerText = "🌱";
-            plant.style.transform = "scale(0.5)";
-            
-            // Етапи росту
-            setTimeout(() => { plant.innerText = "🌿"; plant.style.transform = "scale(0.8)"; }, 3000);
-            setTimeout(() => { 
-                plant.innerText = "🌾"; 
-                plant.style.transform = "scale(1.1)"; 
-                plotStates[id] = 2; 
-            }, 6000);
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
 
-        } else if (plotStates[id] === 2) {
-            // Збір
-            balance += 25;
+    // Зміна ціни на ринку (кожні 10 сек)
+    setInterval(() => {
+        wheatPrice = Math.floor(Math.random() * (35 - 15 + 1)) + 15;
+        document.getElementById('price-tag').innerText = `Ціна зерна: ${wheatPrice}$ ` + (wheatPrice > 25 ? "📈" : "📉");
+    }, 10000);
+
+    function handlePlot(id) {
+        let p = document.getElementById('p' + id);
+        if (states[id] === 0) {
+            states[id] = 1;
+            p.innerText = "🌱"; // Стадія 1: Паростки
+            setTimeout(() => { if(states[id]==1) { states[id]=2; p.innerText="🌿"; } }, 4000); // Стадія 2: Зелень
+            setTimeout(() => { if(states[id]==2) { states[id]=3; p.innerText="🌾"; } }, 8000); // Стадія 3: Золота пшениця
+        } else if (states[id] === 3) {
+            balance += wheatPrice;
             document.getElementById('balance').innerText = balance;
-            plant.innerText = "";
-            plotStates[id] = 0;
-            
-            // Відправка боту
-            tg.sendData(JSON.stringify({
-                action: "harvest_multi",
-                coins: 25,
-                plot: id
-            }));
+            p.innerText = "";
+            states[id] = 0;
+            tg.sendData(JSON.stringify({action: "sell", sum: wheatPrice}));
+        } else {
+            tg.showAlert("Пшениця ще не дозріла! Треба зачекати жовтого кольору.");
+        }
+    }
+
+    function buy(price) {
+        if (balance >= price) {
+            balance -= price;
+            document.getElementById('balance').innerText = balance;
+            tg.showAlert("Ви купили добрива! Пшениця тепер росте швидше (в майбутньому)");
+        } else {
+            tg.showAlert("Мало грошей!");
         }
     }
 </script>
 </body>
-    </html>
-    
+</html>
