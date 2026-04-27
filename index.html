@@ -5,20 +5,18 @@ body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:h
 .screen{display:none;height:82vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:100px;}
 .active-screen{display:block;}
 .farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;perspective:1000px;}
-.plot{height:100px;background:#5d4037;border:3px solid #3e2723;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transform:rotateX(20deg);box-shadow:0 8px 0 #261b18; transition: 0.1s;}
-.plot:active{transform: rotateX(20deg) translateZ(-5px); box-shadow: 0 4px 0 #261b18;}
-.locked{background:#2f3640!important;opacity:0.8;}
+.plot{height:100px;background:#5d4037;border:3px solid #3e2723;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transform:rotateX(20deg);box-shadow:0 8px 0 #261b18;}
 .plant{font-size:40px;transform:rotateX(-20deg);position:absolute;top:10px;}
 .timer{font-size:10px;color:var(--gold);transform:rotateX(-20deg);background:rgba(0,0,0,0.7);padding:2px 5px;border-radius:5px;margin-top:35px;}
-.price-tag{position:absolute; color:var(--red); font-weight:bold; animation: floatUp 1s forwards; pointer-events:none; z-index:10;}
-@keyframes floatUp{from{opacity:1; transform:translateY(0);} to{opacity:0; transform:translateY(-40px);}}
 .card{background:var(--card);padding:12px;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;border:1px solid #0f3460;}
 .buy-btn{background:var(--accent);border:none;color:#1a1a2e;padding:8px 12px;border-radius:6px;font-weight:bold;}
-.boost-btn{background:var(--purple);color:white;border:none;padding:8px 12px;border-radius:6px;font-weight:bold;}
+.m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:12px;width:100%;border-radius:8px;font-weight:bold;margin-top:10px;}
+.m-input{width:100%;padding:10px;margin:5px 0;border-radius:5px;border:none;background:#0f3460;color:white;box-sizing:border-box;}
 .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:10px 0;border-top:2px solid #0f3460;}
 .nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:10px;}
 .nav-btn.active{color:var(--accent);}
-.scarecrow{font-size:50px;text-align:center;margin:5px 0;}
+.price-tag{position:absolute; color:var(--red); font-weight:bold; animation: floatUp 1s forwards; pointer-events:none;}
+@keyframes floatUp{from{opacity:1; transform:translateY(0);} to{opacity:0; transform:translateY(-40px);}}
 </style></head><body onload="init()">
 <div class="header">
     <span style="color:var(--gold)">💰 <span id="balance">0.0</span></span>
@@ -27,42 +25,32 @@ body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:h
 </div>
 
 <div id="farm-screen" class="screen active-screen">
-    <div class="scarecrow" id="main-scarecrow">👨‍🌾</div>
-    <div style="text-align:center;font-size:11px;margin-bottom:10px;color:#aaa;">Рівень: <span id="lvl-display">1</span> | Склад: <span id="shop-limit">0</span>/1000</div>
+    <div style="text-align:center;font-size:50px;">👨‍🌾</div>
+    <div style="text-align:center;font-size:11px;margin-bottom:10px;color:#aaa;">Склад: <span id="shop-limit">0</span>/1000</div>
     <div class="farm-grid" id="farm-grid"></div>
 </div>
 
 <div id="shop-screen" class="screen">
     <h3 style="color:var(--accent)">🛒 МАГАЗИН</h3>
-    <div id="boost-list"></div>
     <div id="seed-list"></div>
-    <button class="buy-btn" style="width:100%; background:var(--red); color:white; margin-top:10px;" onclick="sellEverythingToShop()">ПРОДАТИ ВРОЖАЙ (-30%)</button>
+    <button class="buy-btn" style="width:100%; background:var(--red); color:white; margin-top:10px;" onclick="sellEverythingToShop()">ЗДАТИ СКУПЩИКУ (-30%)</button>
 </div>
 
 <div id="market-screen" class="screen">
     <h3 style="color:var(--gold)">⚖️ АУКЦІОН</h3>
-    <div style="background:var(--card); padding:10px; border-radius:10px;">
-        <select id="sell-item" style="width:100%; padding:10px; margin-bottom:5px; background:#0f3460; color:white; border:none;"></select>
-        <input type="number" id="sell-amount" style="width:48%; padding:10px; background:#0f3460; color:white; border:none;" placeholder="К-сть">
-        <input type="number" id="sell-price" style="width:48%; padding:10px; background:#0f3460; color:white; border:none;" placeholder="Ціна">
-        <button class="buy-btn" style="width:100%; margin-top:10px; background:var(--gold);" onclick="postToAuction()">ВИСТАВИТИ НА РИНОК</button>
+    <div style="background:var(--card); padding:10px; border-radius:10px; margin-bottom:15px;">
+        <select id="sell-item" class="m-input"></select>
+        <input type="number" id="sell-amount" class="m-input" style="width:48%; display:inline-block;" placeholder="К-сть">
+        <input type="number" id="sell-price" class="m-input" style="width:48%; display:inline-block;" placeholder="Ціна">
+        <button class="m-btn" onclick="postToAuction()">ВИСТАВИТИ ЛОТ</button>
     </div>
     <div id="active-lots-list"></div>
-</div>
-
-<div id="exchange-screen" class="screen">
-    <h3 style="text-align:center">📈 БІРЖА</h3>
-    <div class="card" style="flex-direction:column; padding:20px;">
-        <div id="d-price-box" style="font-size:20px; margin-bottom:10px;">1 💎 = <span id="d-price">500</span> 💰</div>
-        <button class="buy-btn" style="width:100%" onclick="exchange()">ОБМІНЯТИ</button>
-    </div>
 </div>
 
 <div class="footer">
     <button class="nav-btn active" onclick="show('farm',this)">🚜 ФЕРМА</button>
     <button class="nav-btn" onclick="show('shop',this)">🛒 ШОП</button>
     <button class="nav-btn" onclick="show('market',this)">⚖️ РИНОК</button>
-    <button class="nav-btn" onclick="show('exchange',this)">📈 БІРЖА</button>
 </div>
 
 <script>
@@ -71,81 +59,66 @@ let userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "local_user";
 let userName = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "Гравець";
 
 let user = {
-    balance: 10.0, diamonds: 0, level: 1, inventory: {}, 
-    stats: {"🌾":0,"🥕":0,"🥔":0,"🍅":0,"🌽":0,"🌻":0,"🎃":0,"🍉":0},
-    shopLimit: 400, unlockedPlots: [true, true, false, false], 
+    balance: 10.0, diamonds: 0, inventory: {}, 
+    stats: {"🌾":0,"🥕":0,"🥔":0},
+    shopLimit: 400, unlockedPlots: [true, true, true, true], 
     plots: [null, null, null, null], activeLots: [],
-    boosts: { speed: 1.0, yield: 1.0, scarecrow: false }
+    boosts: { speed: 1.0, yield: 1.0 }
 };
 
 const crops = [
     {emoji:"🌾", name:"Пшениця", price:0.4, sell:1.2, time:20},
-    {emoji:"🥕", name:"Морква", price:0.8, sell:2.0, time:60}
+    {emoji:"🥕", name:"Морква", price:0.8, sell:2.0, time:45}
 ];
 
 function init() {
     document.getElementById('user-name').innerText = userName;
-    let saved = localStorage.getItem('agro_v9_' + userId);
+    let saved = localStorage.getItem('agro_v10_' + userId);
     if (saved) user = JSON.parse(saved);
     renderFarm(); updateUI();
-    setInterval(saveData, 5000);
+    setInterval(() => { localStorage.setItem('agro_v10_' + userId, JSON.stringify(user)); }, 5000);
+    // Додамо системний лот для тесту
+    if(user.activeLots.length == 0) {
+        user.activeLots.push({id: Date.now(), emoji:"🌾", amount:10, price:8.5, seller: "Бот Степан"});
+    }
 }
 
-function saveData() { localStorage.setItem('agro_v9_' + userId, JSON.stringify(user)); }
+function updateUI() {
+    document.getElementById('balance').innerText = user.balance.toFixed(1);
+    document.getElementById('diamonds').innerText = user.diamonds;
+    document.getElementById('shop-limit').innerText = user.shopLimit;
+}
 
 function renderFarm() {
     let g = document.getElementById('farm-grid'); g.innerHTML = '';
     user.unlockedPlots.forEach((u, i) => {
-        let p = document.createElement('div'); p.className = `plot ${u?'':'locked'}`;
-        p.id = "plot-" + i;
-        if (!u) {
-            p.innerHTML = `🔒 10💎`; p.onclick = () => unlockPlot(i);
+        let p = document.createElement('div'); p.className = 'plot';
+        p.id = "plot-"+i;
+        if (user.plots[i]) {
+            p.innerHTML = `<div id="p${i}" class="plant"></div><div id="t${i}" class="timer"></div>`;
+            startTimer(i);
         } else {
-            p.innerHTML = `<div id="p${i}" class="plant"></div><div id="t${i}" class="timer" style="display:none"></div>`;
-            p.onclick = (e) => handlePlot(i, e);
-            if (user.plots[i]) startTimer(i);
+            p.innerHTML = `<span style="opacity:0.3;font-size:30px;">+</span>`;
         }
+        p.onclick = (e) => handlePlot(i, e);
         g.appendChild(p);
     });
 }
 
-function handlePlot(i, event) {
-    let pObj = user.plots[i];
-    // Посадка
-    if (!pObj) {
+function handlePlot(i, e) {
+    if (!user.plots[i]) {
         let seed = Object.keys(user.inventory).find(k => user.inventory[k] > 0);
-        if (!seed) return tg.showAlert("Купіть насіння!");
+        if (!seed) return tg.showAlert("Немає насіння!");
         let c = crops.find(x => x.emoji == seed);
         user.inventory[seed]--;
-        
-        // Показуємо мінус монетки (хоча насіння вже куплене, покажемо ціну для інфи)
-        showPriceAnim(i, "-" + c.price);
-
-        let fTime = c.time * user.boosts.speed;
-        if(user.boosts.scarecrow) fTime *= 0.8;
-        user.plots[i] = {...c, finish: Date.now() + (fTime * 1000), ready: false};
-        startTimer(i);
-    } 
-    // Збір (Тільки якщо готово)
-    else if (pObj.ready) {
-        let amount = Math.floor(Math.random() * 3) + 1; // Рандом 1-3
-        if (user.boosts.yield > 1) amount = 3; // Буст ГМО дає завжди максимум
-        
-        user.stats[pObj.emoji] += amount;
-        tg.showPopup({message: `Зібрано ${pObj.emoji} x${amount} шт.`});
-        user.plots[i] = null;
+        user.plots[i] = {...c, finish: Date.now() + (c.time * 1000), ready: false};
         renderFarm();
-        updateUI();
+    } else if (user.plots[i].ready) {
+        let amount = user.boosts.yield > 1 ? 3 : Math.floor(Math.random() * 3) + 1;
+        user.stats[user.plots[i].emoji] += amount;
+        user.plots[i] = null;
+        renderFarm(); updateUI();
     }
-}
-
-function showPriceAnim(i, text) {
-    let el = document.getElementById('plot-' + i);
-    let tag = document.createElement('div');
-    tag.className = 'price-tag';
-    tag.innerText = text;
-    el.appendChild(tag);
-    setTimeout(() => tag.remove(), 1000);
 }
 
 function startTimer(i) {
@@ -157,44 +130,57 @@ function startTimer(i) {
         if (d <= 0) {
             p.ready = true; elP.innerText = p.emoji; elT.innerText = "ГОТОВО!"; clearInterval(it);
         } else {
-            elP.innerText = "🌱"; elT.style.display = "block"; elT.innerText = Math.floor(d/1000) + "s";
+            elP.innerText = "🌱"; elT.innerText = Math.floor(d/1000) + "s";
         }
     }, 1000);
 }
 
-function updateUI() {
-    document.getElementById('balance').innerText = user.balance.toFixed(1);
-    document.getElementById('diamonds').innerText = user.diamonds;
-    document.getElementById('lvl-display').innerText = user.level;
-    document.getElementById('shop-limit').innerText = user.shopLimit;
-}
-
-function buySeed(idx) {
-    let c = crops[idx];
-    if (user.balance >= c.price) {
-        user.balance -= c.price;
-        user.inventory[c.emoji] = (user.inventory[c.emoji] || 0) + 1;
-        updateUI(); renderShop();
-    } else tg.showAlert("Мало монет!");
-}
-
-function renderShop() {
-    let h = '<h4>Насіння:</h4>';
-    crops.forEach((c, i) => {
-        h += `<div class="card">
-            <div>${c.emoji} ${c.name} (${user.inventory[c.emoji]||0})</div>
-            <button class="buy-btn" onclick="buySeed(${i})">${c.price}💰</button>
-        </div>`;
+// ЛОГІКА АУКЦІОНУ
+function renderLots() {
+    let l = document.getElementById('active-lots-list');
+    l.innerHTML = '<h4>Активні лоти:</h4>';
+    user.activeLots.forEach((lot, index) => {
+        let card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <div>
+                <b>${lot.emoji} x${lot.amount}</b><br>
+                <small>Продавець: ${lot.seller}</small><br>
+                <span style="color:var(--gold)">${lot.price} 💰</span>
+            </div>
+            <button class="buy-btn" onclick="confirmPurchase(${index})">КУПИТИ</button>
+        `;
+        l.appendChild(card);
     });
-    document.getElementById('seed-list').innerHTML = h;
-    
-    let b = `<h4>Бусти:</h4>
-        <div class="card"><div>📦 ГМО (Завжди 3 врожаю)</div><button class="boost-btn" onclick="buyGmo()">15💎</button></div>`;
-    document.getElementById('boost-list').innerHTML = b;
 }
 
-function buyGmo() {
-    if(user.diamonds >= 15) { user.diamonds -= 15; user.boosts.yield = 1.5; updateUI(); tg.showAlert("Тепер завжди випадає 3 одиниці!"); }
+function confirmPurchase(index) {
+    let lot = user.activeLots[index];
+    tg.showConfirm(`Ви впевнені, що хочете купити ${lot.emoji} x${lot.amount} за ${lot.price}💰?`, (ok) => {
+        if (ok) {
+            if (user.balance >= lot.price) {
+                user.balance -= lot.price;
+                user.stats[lot.emoji] += lot.amount;
+                user.activeLots.splice(index, 1);
+                updateUI(); renderLots();
+                tg.showAlert("Успішно куплено!");
+            } else {
+                tg.showAlert("Недостатньо монет!");
+            }
+        }
+    });
+}
+
+function postToAuction() {
+    let e = document.getElementById('sell-item').value, 
+        a = parseInt(document.getElementById('sell-amount').value), 
+        p = parseFloat(document.getElementById('sell-price').value);
+    if (!a || (user.stats[e] || 0) < a || !p) return tg.showAlert("Помилка даних!");
+    
+    user.stats[e] -= a;
+    user.activeLots.push({id: Date.now(), emoji: e, amount: a, price: p, seller: userName});
+    updateUI(); renderLots();
+    tg.showAlert("Лот виставлено!");
 }
 
 function show(s, b) {
@@ -203,10 +189,37 @@ function show(s, b) {
     document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     if (s == 'shop') renderShop();
+    if (s == 'market') {
+        let o = ''; crops.forEach(c => o += `<option value="${c.emoji}">${c.emoji} ${c.name} (${user.stats[c.emoji]||0})</option>`);
+        document.getElementById('sell-item').innerHTML = o;
+        renderLots();
+    }
+}
+
+function renderShop() {
+    let h = '<h4>Насіння:</h4>';
+    crops.forEach((c, i) => {
+        h += `<div class="card">
+            <div>${c.emoji} ${c.name}</div>
+            <button class="buy-btn" onclick="buySeed(${i})">${c.price}💰</button>
+        </div>`;
+    });
+    document.getElementById('seed-list').innerHTML = h;
+}
+
+function buySeed(i) {
+    if (user.balance >= crops[i].price) {
+        user.balance -= crops[i].price;
+        user.inventory[crops[i].emoji] = (user.inventory[crops[i].emoji] || 0) + 1;
+        updateUI(); renderShop();
+    }
 }
 
 function sellEverythingToShop() {
-    let t = 0; for(let e in user.stats) { let c = crops.find(x => x.emoji == e); if(c && user.stats[e]>0) { t += (user.stats[e]*c.sell*0.7); user.stats[e]=0; } }
-    user.balance += t; updateUI(); tg.showAlert("Продано за " + t.toFixed(1));
+    let t = 0; for(let e in user.stats) { 
+        let c = crops.find(x => x.emoji == e); 
+        if(c && user.stats[e]>0) { t += (user.stats[e]*c.sell*0.7); user.stats[e]=0; } 
+    }
+    user.balance += t; updateUI();
 }
 </script></body></html>
