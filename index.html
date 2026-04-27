@@ -1,7 +1,7 @@
 <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>Agro Tycoon</title><script src="https://telegram.org/js/telegram-web-app.js"></script><style>
 :root{--bg:#1a1a2e;--card:#16213e;--accent:#48dbfb;--gold:#f1c40f;--green:#4cd137;--red:#e84118;}
 body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:hidden;user-select:none;}
-.header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);display:flex;justify-content:space-between;font-weight:bold;font-size:14px;}
+.header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);display:flex;justify-content:space-between;font-weight:bold;font-size:14px;align-items:center;}
 .screen{display:none;height:82vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:100px;}
 .active-screen{display:block;}
 .farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;perspective:1000px;}
@@ -17,13 +17,16 @@ body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:h
 .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:10px 0;border-top:2px solid #0f3460;}
 .nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:10px;}
 .nav-btn.active{color:var(--accent);}
+.lvl-btn{background:rgba(76,209,55,0.2);border:1px solid var(--green);color:var(--green);padding:4px 8px;border-radius:6px;font-size:12px;cursor:pointer;}
+.scarecrow{font-size:50px;text-align:center;margin:10px 0;filter:drop-shadow(0 0 5px rgba(0,0,0,0.5));}
 </style></head><body onload="init()">
 <div class="header">
     <span style="color:var(--gold)">💰 <span id="balance">10.0</span></span>
     <span style="color:var(--accent)">💎 <span id="diamonds">0</span></span>
-    <span id="lvl-display" style="color:var(--green)">LVL 1</span>
+    <button id="lvl-display" class="lvl-btn" onclick="showLvlInfo()">LVL 1</button>
 </div>
 <div id="farm-screen" class="screen active-screen">
+    <div class="scarecrow">👨‍🌾</div>
     <div style="text-align:center;font-size:11px;margin-bottom:10px;color:#aaa;">Склад: <span id="shop-limit">0</span>/1000</div>
     <div class="farm-grid" id="farm-grid"></div>
 </div>
@@ -48,7 +51,8 @@ body{background:var(--bg);margin:0;font-family:sans-serif;color:white;overflow:h
 <div id="exchange-screen" class="screen">
     <h3 style="text-align:center">📈 БІРЖА</h3>
     <div class="card" style="flex-direction:column;padding:20px;text-align:center;">
-        <div style="font-size:24px;margin-bottom:10px;"><span id="d-price">500</span> 💰 <span id="trend">━</span></div>
+        <div style="font-size:24px;margin-bottom:5px;font-weight:bold;">1 💎</div>
+        <div style="font-size:16px;margin-bottom:15px;color:#aaa;">Ціна: <span id="d-price">500</span> 💰 <span id="trend">━</span></div>
         <button class="buy-btn" style="width:100%;height:45px;" onclick="exchange()">КУПИТИ 1 💎</button>
     </div>
 </div>
@@ -77,5 +81,5 @@ function updateUI(){document.getElementById('balance').innerText=user.balance.to
 function renderShop(){let h='';crops.forEach((c,i)=>{let l=user.level<c.lvl;h+=`<div class="card ${l?'locked':''}"><div><b>${c.emoji}${c.name}</b><br><small>В тебе: ${user.inventory[c.emoji]||0}</small></div>${l?'🔒':`<button class="buy-btn" onclick="buy(${i})">${c.price}💰</button>`}</div>`;});document.getElementById('seed-list').innerHTML=h;}
 function show(s,b){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active-screen'));document.getElementById(s+'-screen').classList.add('active-screen');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(s=='shop')renderShop();if(s=='market'){let o='';crops.forEach(c=>o+=`<option value="${c.emoji}">${c.emoji} ${c.name} (${user.stats[c.emoji]||0})</option>`);document.getElementById('sell-item').innerHTML=o;let st='';for(let e in user.stats)if(user.stats[e]>0)st+=`${e}:${user.stats[e]} `;document.getElementById('stats-display').innerText=st||'Пусто';}}
 function exchange(){if(user.balance>=user.dPrice){user.balance-=user.dPrice;user.diamonds++;updateUI();}}
+function showLvlInfo(){let req="";if(user.level==1)req="Для 2 рівня треба: 50 🌾 Пшениці";else if(user.level==2)req="Для 3 рівня треба: 150 🌾 Пшениці та 40 🥕 Моркви";else req="Максимальний рівень на сьогодні!";tg.showPopup({title:"Ваш прогрес",message:req});}
 </script></body></html>
-            
