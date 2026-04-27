@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacker Market</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; text-align: center; padding: 20px; }
+        .box { border: 1px solid #0f0; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #0f0; margin-top: 50px; }
+        input { background: #111; border: 1px solid #0f0; color: #0f0; padding: 15px; width: 80%; margin: 15px 0; font-size: 18px; }
+        button { background: #0f0; color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; width: 85%; font-size: 18px; }
+        .fee { margin-top: 15px; color: #888; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>STOLEN DATA MARKET</h1>
+        <p>Введіть ціну для продажу експлойта:</p>
+        <input type="number" id="price" placeholder="Ціна в $">
+        <button onclick="send()">ВИСТАВИТИ НА РИНОК</button>
+        <div class="fee">Комісія хакера-адміна: 30%</div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        function send() {
+            let p = document.getElementById('price').value;
+            if (p > 0) {
+                tg.sendData(JSON.stringify({action: "sell", item: "Exploit_v3", price: p}));
+                tg.close();
+            }
+        }
+    </script>
+</body>
+</html>
