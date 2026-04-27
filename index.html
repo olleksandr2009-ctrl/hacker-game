@@ -3,90 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Crypto Farm</title>
+    <title>Multi-Plot Farm</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #87ceeb; margin: 0; padding: 0; overflow: hidden; font-family: 'Arial', sans-serif; }
-        #farm-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1.2); }
-        .tile { position: absolute; width: 64px; height: 32px; background: url('tile.png') no-repeat; background-size: contain; }
-        .crop { position: absolute; font-size: 30px; transform: translate(15px, -20px); transition: opacity 0.5s; opacity: 0; }
-        .menu { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 20px 20px 0 0; text-align: center; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
-        button { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        body { background: #546e7a; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
+        
+        /* Верхня панель */
+        .header { background: rgba(0,0,0,0.5); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #ffca28; }
+        .coins { color: #ffca28; font-weight: bold; font-size: 22px; text-shadow: 1px 1px 2px black; }
+
+        /* Сітка грядок */
+        .farm-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 20px; 
+            padding: 20px; 
+            margin-top: 50px;
+            perspective: 1000px;
+        }
+
+        .plot { 
+            width: 100%; height: 100px; 
+            background: #5d4037; border: 3px solid #3e2723;
+            border-radius: 12px;
+            position: relative;
+            transform: rotateX(30deg);
+            box-shadow: 0 8px 0 #261b18;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.1s;
+        }
+        .plot:active { transform: rotateX(30deg) translateY(4px); box-shadow: 0 4px 0 #261b18; }
+
+        .plant { font-size: 45px; position: absolute; transition: 0.3s; }
+
+        /* Нижня навігація (кнопки) */
+        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #263238; padding: 10px 0; border-top: 2px solid #455a64; }
+        .nav-btn { 
+            flex: 1; background: none; border: none; color: white; 
+            display: flex; flex-direction: column; align-items: center; 
+            font-size: 11px; font-weight: bold; opacity: 0.7;
+        }
+        .nav-btn.active { opacity: 1; color: #ffca28; }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
-    <h1>МОЯ ІЗОМЕТРИЧНА ФЕРМА</h1>
+
+<div class="header">
+    <div class="coins">🪙 <span id="balance">0</span></div>
+    <div style="background: #2e7d32; padding: 5px 10px; border-radius: 20px; font-size: 12px;">УРОВЕНЬ 1</div>
+</div>
+
+<div class="farm-grid">
+    <div class="plot" onclick="workPlot(this, 0)"><div class="plant" id="p0"></div></div>
+    <div class="plot" onclick="workPlot(this, 1)"><div class="plant" id="p1"></div></div>
+    <div class="plot" onclick="workPlot(this, 2)"><div class="plant" id="p2"></div></div>
+    <div class="plot" onclick="workPlot(this, 3)"><div class="plant" id="p3"></div></div>
+</div>
+
+<div class="footer">
+    <button class="nav-btn" onclick="tg.showAlert('Магазин насіння скоро відкриється!')">
+        <span class="nav-icon">📦</span>МАГАЗИН
+    </button>
+    <button class="nav-btn active">
+        <span class="nav-icon">🚜</span>ФЕРМА
+    </button>
+    <button class="nav-btn" onclick="tg.showConfirm('Бажаєте вивести зароблені кошти?')">
+        <span class="nav-icon">💰</span>ВИВІД
+    </button>
+    <button class="nav-btn" onclick="tg.showAlert('Налаштування профілю')">
+        <span class="nav-icon">⚙️</span>ОПЦІЇ
+    </button>
+</div>
+
+<script>
+    let tg = window.Telegram.WebApp;
+    tg.expand();
     
-    <div id="farm-container"></div>
+    let balance = 0;
+    let plotStates = [0, 0, 0, 0]; // 0-порожньо, 1-росте, 2-готово
 
-    <div class="menu">
-        <p>Натисни на грядку (🌱) щоб посадити пшеницю.</p>
-        <button id="main-action" onclick="finishPlanting()">ЗІБРАТИ ВРОЖАЙ</button>
-    </div>
-
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-        const container = document.getElementById('farm-container');
-        let selectedTile = null;
-        let readyCrops = 0;
-
-        // Створюємо поле 4x4 (ізометрія)
-        const gridSize = 4;
-        const tileWidth = 64;
-        const tileHeight = 32;
-
-        for (let y = 0; y < gridSize; y++) {
-            for (let x = 0; x < gridSize; x++) {
-                const tile = document.createElement('div');
-                tile.className = 'tile';
-                
-                // Формула для ізометричного позиціонування
-                const isoX = (x - y) * tileWidth / 2;
-                const isoY = (x + y) * tileHeight / 2;
-                
-                tile.style.left = `${isoX}px`;
-                tile.style.top = `${isoY}px`;
-                tile.onclick = () => selectTile(tile, isoX, isoY);
-                container.appendChild(tile);
-            }
-        }
-
-        function selectTile(tile, x, y) {
-            if (tile.dataset.hasCrop) return; // Вже росте
-            selectedTile = tile;
+    function workPlot(element, id) {
+        let plant = document.getElementById('p' + id);
+        
+        if (plotStates[id] === 0) {
+            // Посадка
+            plotStates[id] = 1;
+            plant.innerText = "🌱";
+            plant.style.transform = "scale(0.5)";
             
-            // Створюємо crop
-            const crop = document.createElement('span');
-            crop.className = 'crop';
-            crop.innerText = "🌱";
-            crop.style.left = `${x}px`;
-            crop.style.top = `${y}px`;
-            container.appendChild(crop);
-            
-            tile.dataset.hasCrop = "true";
-            
-            // Пшениця виростає через 10 секунд
-            setTimeout(() => {
-                crop.innerText = "🌾";
-                crop.style.opacity = "1";
-                readyCrops++;
-            }, 10000);
-        }
+            // Етапи росту
+            setTimeout(() => { plant.innerText = "🌿"; plant.style.transform = "scale(0.8)"; }, 3000);
+            setTimeout(() => { 
+                plant.innerText = "🌾"; 
+                plant.style.transform = "scale(1.1)"; 
+                plotStates[id] = 2; 
+            }, 6000);
 
-        function finishPlanting() {
-            if (readyCrops > 0) {
-                tg.sendData(JSON.stringify({
-                    action: "farm_harvest",
-                    amount: readyCrops
-                }));
-                readyCrops = 0;
-                tg.close();
-            } else {
-                alert("Врожай ще не готовий!");
-            }
+        } else if (plotStates[id] === 2) {
+            // Збір
+            balance += 25;
+            document.getElementById('balance').innerText = balance;
+            plant.innerText = "";
+            plotStates[id] = 0;
+            
+            // Відправка боту
+            tg.sendData(JSON.stringify({
+                action: "harvest_multi",
+                coins: 25,
+                plot: id
+            }));
         }
-    </script>
+    }
+</script>
 </body>
-</html>
-
+    </html>
+    
