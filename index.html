@@ -1,62 +1,94 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>Agro Empire: Pro Edition</title><script src="https://telegram.org/js/telegram-web-app.js"></script><style>
-:root{--bg:#0f0c29;--card:rgba(22, 33, 62, 0.8);--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#5d4037;--grass:#27ae60;--stone:#7f8c8d;--red:#e74c3c;}
-body{background:linear-gradient(135deg, #0f0c29, #302b63, #24243e);margin:0;font-family:'Segoe UI',sans-serif;color:white;overflow:hidden;user-select:none;}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <title>Agro Empire: Pro Edition</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: #0f0c29; --card: rgba(22, 33, 62, 0.8); --accent: #48dbfb;
+            --gold: #f1c40f; --green: #2ecc71; --dirt: #5d4037;
+            --grass: #27ae60; --stone: #7f8c8d; --red: #e74c3c;
+        }
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            margin: 0; font-family: 'Segoe UI', sans-serif; color: white;
+            overflow: hidden; user-select: none;
+        }
 
-.header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100;}
-.stats-line{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:8px;}
-.level-area{display:flex;align-items:center;gap:10px;}
-.lvl-btn{background:var(--accent);color:#000;border:none;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px var(--accent);}
-.level-bar-container{flex-grow:1;background:#333;height:14px;border-radius:7px;overflow:hidden;position:relative;border:1px solid #444;}
-.level-bar-fill{background:linear-gradient(90deg, #00d2ff, #3a7bd5);height:100%;transition:width 0.5s cubic-bezier(0.4, 0, 0.2, 1);}
-.level-text{position:absolute;width:100%;text-align:center;font-size:9px;font-weight:bold;line-height:14px;color:white;text-shadow:1px 1px 1px black;}
+        /* Анімації */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        
+        .header { background: var(--card); padding: 10px; border-bottom: 2px solid var(--accent); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .stats-line { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 8px; }
+        
+        .level-bar-container { flex-grow: 1; background: #333; height: 14px; border-radius: 7px; overflow: hidden; position: relative; border: 1px solid #444; }
+        .level-bar-fill { background: linear-gradient(90deg, #00d2ff, #3a7bd5); height: 100%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .level-text { position: absolute; width: 100%; text-align: center; font-size: 9px; font-weight: bold; line-height: 14px; color: white; text-shadow: 1px 1px 1px black; }
 
-.screen{display:none;height:78vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:150px;animation:fadeIn 0.4s ease-out;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-.active-screen{display:block;}
+        .screen { display: none; height: 78vh; overflow-y: auto; padding: 15px; box-sizing: border-box; padding-bottom: 150px; animation: fadeIn 0.4s ease-out; }
+        .active-screen { display: block; }
 
-.tabs-loc{display:flex;gap:10px;margin-bottom:15px;}
-.tab-btn{flex:1;padding:10px;border-radius:10px;border:none;background:var(--card);color:white;font-weight:bold;border:1px solid #333;transition:0.3s;}
-.tab-btn.active{background:var(--accent);color:#1a1a2e;transform:scale(1.05);}
+        .card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); transition: transform 0.2s, border-color 0.2s; }
+        .card:active { transform: scale(0.98); }
 
-.farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
-.slot{height:130px;background:var(--grass);border:3px solid #1e8449;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 6px 0 #145a32;transition:0.1s active;}
-.slot:active{transform:translateY(4px);box-shadow:0 2px 0 #145a32;}
-.slot.item-plot{background:var(--dirt); border-color:#3e2723;}
-.slot.item-stone{background:var(--stone); border-color:#5a6263;}
-.slot.locked{background:rgba(0,0,0,0.3); border: 2px dashed #555; opacity:0.6; box-shadow:none;}
+        .m-btn { background: var(--gold); color: #1a1a2e; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 5px; cursor: pointer; transition: 0.2s; }
+        .m-btn:active { transform: scale(0.92); }
 
-/* Корзина (Hotbar) */
-.seed-selector {display:flex; gap:10px; overflow-x:auto; padding:10px; background:rgba(0,0,0,0.6); border-top:1px solid var(--accent); position:fixed; bottom:60px; width:100%; z-index:90; backdrop-filter:blur(5px); box-sizing:border-box; min-height:65px;}
-.seed-icon {min-width:45px; height:45px; background:var(--card); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:24px; border:2px solid transparent; position:relative; transition:0.3s;}
-.seed-icon.active {border-color:var(--accent); box-shadow:0 0 10px var(--accent); transform:translateY(-5px);}
-.seed-count {position:absolute; bottom:-5px; right:-5px; background:var(--red); color:white; font-size:10px; padding:2px 5px; border-radius:5px;}
+        .farm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .slot { height: 130px; background: var(--grass); border: 3px solid #1e8449; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-shadow: 0 6px 0 #145a32; transition: 0.1s; }
+        .slot:active { transform: translateY(4px); box-shadow: 0 2px 0 #145a32; }
+        .slot.item-plot { background: var(--dirt); border-color: #3e2723; }
+        .slot.locked { background: rgba(0,0,0,0.3); border: 2px dashed #555; opacity: 0.6; box-shadow: none; }
 
-#lvl-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:20px;z-index:1000;backdrop-filter:blur(15px);text-align:center;box-shadow:0 0 30px rgba(0,0,0,0.5);}
-.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999;}
+        .seed-selector { display: flex; gap: 10px; overflow-x: auto; padding: 10px; background: rgba(0,0,0,0.6); border-top: 1px solid var(--accent); position: fixed; bottom: 60px; width: 100%; z-index: 90; backdrop-filter: blur(5px); box-sizing: border-box; }
+        .seed-icon { min-width: 45px; height: 45px; background: var(--card); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 2px solid transparent; position: relative; transition: 0.3s; }
+        .seed-icon.active { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); transform: translateY(-5px); }
 
-.m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:12px;border-radius:10px;font-weight:bold;width:100%;margin-top:5px;cursor:pointer;transition:0.2s;}
-.footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:12px 0;border-top:2px solid #0f3460;z-index:100;backdrop-filter:blur(10px);}
-.nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:9px;}
-.nav-btn.active{color:var(--accent);}
-.card{background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.1);}
-input, select{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0;background:#0f3460;color:white;box-sizing:border-box;}
-</style></head><body onload="init()">
+        /* Модальні вікна */
+        #lvl-modal, #sell-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: var(--card); border: 2px solid var(--accent); border-radius: 20px; padding: 20px; z-index: 1000; backdrop-filter: blur(20px); text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); animation: fadeIn 0.3s ease; }
+        #sell-modal { border-color: var(--green); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 999; }
 
-<div class="overlay" id="overlay" onclick="closeModal()"></div>
+        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: var(--card); padding: 12px 0; border-top: 2px solid #0f3460; z-index: 100; }
+        .nav-btn { flex: 1; background: none; border: none; color: #95a5a6; display: flex; flex-direction: column; align-items: center; font-size: 9px; transition: 0.3s; }
+        .nav-btn.active { color: var(--accent); transform: translateY(-3px); }
+        
+        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--accent); margin: 8px 0; background: #0f3460; color: white; box-sizing: border-box; }
+        .tab-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #333; background: var(--card); color: white; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--accent); color: #1a1a2e; }
+    </style>
+</head>
+<body onload="init()">
+
+<div class="overlay" id="overlay" onclick="closeAllModals()"></div>
+
 <div id="lvl-modal">
     <h3 style="color:var(--accent);margin-top:0">🎯 ЗАВДАННЯ</h3>
     <div id="lvl-task-desc">Завантаження...</div>
-    <button class="m-btn" onclick="closeModal()" style="margin-top:20px">ЗРОЗУМІЛО</button>
+    <button class="m-btn" onclick="closeAllModals()">ЗРОЗУМІЛО</button>
+</div>
+
+<div id="sell-modal">
+    <h3 id="sell-title" style="color:var(--green);margin-top:0">🚚 ПРОДАЖ</h3>
+    <p id="sell-info"></p>
+    <input type="number" id="sell-input" placeholder="Скільки продати?">
+    <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="m-btn" style="background:var(--red);color:white" onclick="closeAllModals()">ВІДМІНА</button>
+        <button class="m-btn" style="background:var(--green);color:white" id="confirm-sell-btn">ПРОДАТИ</button>
+    </div>
 </div>
 
 <div class="header">
     <div class="stats-line">
         <div style="color:var(--gold)">💰 <span id="balance">0</span></div>
-        <div style="font-weight:bold;color:var(--accent)">AGRO EMPIRE</div>
+        <div style="font-weight:bold;color:var(--accent);letter-spacing:1px">AGRO EMPIRE</div>
         <div style="color:var(--accent)">💎 <span id="diamonds">0.0</span></div>
     </div>
-    <div class="level-area">
-        <button class="lvl-btn" onclick="openLvlModal()">УРОВЕНЬ</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+        <button class="lvl-btn" onclick="openLvlModal()" style="background:var(--accent);border:none;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;">LEVEL</button>
         <div class="level-bar-container">
             <div id="level-fill" class="level-bar-fill" style="width:0%"></div>
             <div class="level-text" id="level-display">Lvl 1 (0/10)</div>
@@ -65,7 +97,7 @@ input, select{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0
 </div>
 
 <div id="map-screen" class="screen active-screen">
-    <div class="tabs-loc">
+    <div class="tabs-loc" style="display:flex;gap:10px;margin-bottom:15px;">
         <button id="tab-farm" class="tab-btn active" onclick="switchLoc('farm')">🚜 ПОЛЕ</button>
         <button id="tab-mine" class="tab-btn" onclick="switchLoc('mine')">⛏️ КАР'ЄР</button>
     </div>
@@ -75,16 +107,16 @@ input, select{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0
 <div id="shop-screen" class="screen">
     <div class="card">
         <h4 style="margin:0;color:var(--accent)">🏗️ БУДІВНИЦТВО</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
             <button class="m-btn" onclick="buyObject('plot', 10)">🌱 Грядка (10💰)</button>
             <button class="m-btn" style="background:#bdc3c7" onclick="buyObject('stone', 50)">🪨 Камінь (50💰)</button>
         </div>
     </div>
-    <div class="card"><h4 style="margin:0;color:var(--gold)">🛒 НАСІННЯ</h4><div id="seed-list"></div></div>
+    <div class="card"><h4 style="margin:0;color:var(--gold)">🛒 НАСІННЯ</h4><div id="seed-list" style="margin-top:10px"></div></div>
 </div>
 
 <div id="auction-screen" class="screen">
-    <div class="tabs-loc">
+    <div class="tabs-loc" style="display:flex;gap:10px;margin-bottom:15px;">
         <button id="auc-buy-tab" class="tab-btn active" onclick="switchAuc('buy')">🛒 КУПИТИ</button>
         <button id="auc-sell-tab" class="tab-btn" onclick="switchAuc('sell')">📦 МОЇ ЛОТИ</button>
     </div>
@@ -92,9 +124,9 @@ input, select{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0
 </div>
 
 <div id="dealer-screen" class="screen">
-    <h3 style="color:var(--green)">🚚 СКУПЩИК</h3>
+    <h3 style="color:var(--green)">🚚 СКУПЩИК ВРОЖАЮ</h3>
     <div id="inventory-sell"></div>
-    <button class="m-btn" style="background:var(--green);color:white;margin-top:15px;" onclick="sellAll()">ПРОДАТИ ВСЕ</button>
+    <button class="m-btn" style="background:var(--green);color:white;margin-top:15px;" onclick="sellAll()">ПРОДАТИ ВСЕ ВІДРАЗУ</button>
 </div>
 
 <div class="seed-selector" id="seed-bar"></div>
@@ -109,8 +141,8 @@ input, select{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0
 <script>
 let tg = window.Telegram.WebApp;
 let currentLoc = 'farm';
-let currentAucTab = 'buy';
-let selectedSeed = null; // Вибране насіння
+let selectedSeed = null;
+let currentSellEmoji = null;
 
 let user = {
     balance: 20, diamonds: 0, level: 1, totalHarvests: 0,
@@ -135,9 +167,8 @@ const crops = [
 ];
 
 function init() {
-    let saved = localStorage.getItem('agro_pro_v1');
+    let saved = localStorage.getItem('agro_pro_v2');
     if(saved) user = JSON.parse(saved);
-    checkAuctionExpiry();
     updateUI(); renderMap();
     setInterval(() => { renderMap(); updateUI(); checkQuests(); }, 1000);
 }
@@ -151,7 +182,6 @@ function updateUI() {
     document.getElementById('level-fill').style.width = prog + "%";
     document.getElementById('level-display').innerText = `Lvl ${user.level} (${user.totalHarvests}/${next})`;
 
-    // Оновлення корзини
     let bar = document.getElementById('seed-bar');
     bar.innerHTML = "";
     let hasAny = false;
@@ -160,56 +190,12 @@ function updateUI() {
             hasAny = true;
             let div = document.createElement('div');
             div.className = `seed-icon ${selectedSeed === s ? 'active' : ''}`;
-            div.innerHTML = `${s} <span class="seed-count">${user.inventory.seeds[s]}</span>`;
+            div.innerHTML = `${s} <span style="position:absolute;bottom:-5px;right:-5px;background:var(--red);font-size:10px;padding:2px 5px;border-radius:5px;">${user.inventory.seeds[s]}</span>`;
             div.onclick = () => { selectedSeed = s; updateUI(); };
             bar.appendChild(div);
         }
     });
     if(!hasAny) bar.innerHTML = "<small style='width:100%;text-align:center;opacity:0.5'>Купи насіння у Шопі</small>";
-}
-
-function handleObject(i) {
-    let map = currentLoc === 'farm' ? user.map_farm : user.map_mine;
-    let obj = map[i];
-    if(obj.type === 'plot') {
-        if(!obj.data) { // Садимо
-            if(!selectedSeed) return tg.showAlert("Вибери насіння знизу!");
-            if(user.inventory.seeds[selectedSeed] <= 0) return tg.showAlert("Закінчилось!");
-            
-            user.inventory.seeds[selectedSeed]--;
-            obj.data = { emoji: selectedSeed, finish: Date.now() + (crops.find(x=>x.e===selectedSeed).t * 1000) };
-            if(user.inventory.seeds[selectedSeed] === 0) selectedSeed = null;
-        } else if(Date.now() >= obj.data.finish) { // Збираємо
-            user.stats[obj.data.emoji] = (user.stats[obj.data.emoji] || 0) + 1;
-            user.totalHarvests++; obj.data = null;
-        }
-    } else if(obj.type === 'stone' && Date.now() >= obj.next) {
-        user.diamonds += 0.2; obj.next = Date.now() + 7200000;
-        tg.showAlert("+0.2 💎");
-    }
-    save(); updateUI(); renderMap();
-}
-
-function openLvlModal() {
-    let next = crops[user.unlockedIdx + 1];
-    let desc = document.getElementById('lvl-task-desc');
-    if(!next) desc.innerHTML = "Максимальний рівень!";
-    else desc.innerHTML = `Треба зібрати ще ${next.req - user.totalHarvests} врожаїв для ${next.e}`;
-    document.getElementById('lvl-modal').style.display = 'block';
-    document.getElementById('overlay').style.display = 'block';
-}
-
-function closeModal() { document.getElementById('lvl-modal').style.display = 'none'; document.getElementById('overlay').style.display = 'none'; }
-function checkQuests() {
-    let next = crops[user.unlockedIdx + 1];
-    if(next && user.totalHarvests >= next.req) { user.unlockedIdx++; user.level++; tg.showPopup({title:'Level Up!', message:'Відкрито: '+next.n}); save(); }
-}
-
-function switchLoc(loc) { 
-    currentLoc = loc; 
-    document.getElementById('tab-farm').className = loc === 'farm' ? 'tab-btn active' : 'tab-btn';
-    document.getElementById('tab-mine').className = loc === 'mine' ? 'tab-btn active' : 'tab-btn';
-    renderMap(); 
 }
 
 function renderMap() {
@@ -227,7 +213,7 @@ function renderMap() {
                     d.classList.add('item-plot');
                     if(obj.data) {
                         let left = Math.ceil((obj.data.finish - Date.now())/1000);
-                        d.innerHTML = left <= 0 ? `<b style="font-size:40px">${obj.data.emoji}</b>` : `🌱<br><small>${left}s</small>`;
+                        d.innerHTML = left <= 0 ? `<b style="font-size:40px; animation:pulse 1s infinite">${obj.data.emoji}</b>` : `🌱<br><small>${left}s</small>`;
                     } else d.innerHTML = "🟫";
                 } else {
                     d.classList.add('item-stone');
@@ -242,84 +228,125 @@ function renderMap() {
     }
 }
 
-function placeObject(i) {
-    if(currentLoc === 'farm' && user.inventory.plot > 0) { user.inventory.plot--; user.map_farm[i] = {type:'plot', data:null}; }
-    else if(currentLoc === 'mine' && user.inventory.stone > 0) { user.inventory.stone--; user.map_mine[i] = {type:'stone', next:Date.now()+7200000}; }
-    renderMap(); save(); updateUI();
-}
-
-function switchAuc(tab) { 
-    currentAucTab = tab; 
-    document.getElementById('auc-buy-tab').className = tab === 'buy' ? 'tab-btn active' : 'tab-btn';
-    document.getElementById('auc-sell-tab').className = tab === 'sell' ? 'tab-btn active' : 'tab-btn';
-    renderAuction(); 
-}
-
-function renderAuction() {
-    let cont = document.getElementById('auc-content');
-    if(currentAucTab === 'buy') {
-        cont.innerHTML = '<div class="auc-grid" id="auc-buy-list"></div>';
-        let fake = [{e:'🌽', n:'Кукурудза', c:5, p:15}, {e:'🥕', n:'Морква', c:2, p:20}];
-        fake.forEach(f => {
-            document.getElementById('auc-buy-list').innerHTML += `<div class="card" style="text-align:center"><div>${f.e}</div><b>${f.n}</b><br><button class="m-btn" onclick="buyAucFake(${f.p})">КУПИТИ ${f.p}💰</button></div>`;
-        });
-    } else {
-        let items = "";
-        for(let e in user.stats) if(user.stats[e] > 0) items += `<option value="${e}">${e}</option>`;
-        cont.innerHTML = `<div class="card"><select id="auc-item-sel">${items || '<option>Порожньо</option>'}</select><input type="number" id="auc-count" placeholder="К-сть"><input type="number" id="auc-price" placeholder="Ціна"><button class="m-btn" onclick="createLot()">ВИСТАВИТИ</button></div><div id="my-lots-list"></div>`;
-        renderMyLots();
+function handleObject(i) {
+    let map = currentLoc === 'farm' ? user.map_farm : user.map_mine;
+    let obj = map[i];
+    if(obj.type === 'plot') {
+        if(!obj.data) {
+            if(!selectedSeed) return tg.showAlert("Вибери насіння знизу!");
+            user.inventory.seeds[selectedSeed]--;
+            obj.data = { emoji: selectedSeed, finish: Date.now() + (crops.find(x=>x.e===selectedSeed).t * 1000) };
+            if(user.inventory.seeds[selectedSeed] === 0) selectedSeed = null;
+        } else if(Date.now() >= obj.data.finish) {
+            user.stats[obj.data.emoji] = (user.stats[obj.data.emoji] || 0) + 1;
+            user.totalHarvests++; obj.data = null;
+        }
+    } else if(obj.type === 'stone' && Date.now() >= obj.next) {
+        user.diamonds += 0.2; obj.next = Date.now() + 7200000;
+        tg.showAlert("+0.2 💎");
     }
+    save(); updateUI(); renderMap();
 }
 
-function createLot() {
-    let e = document.getElementById('auc-item-sel').value;
-    let c = parseInt(document.getElementById('auc-count').value);
-    let p = parseFloat(document.getElementById('auc-price').value);
-    if(user.stats[e] >= c && c > 0 && p > 0) { user.stats[e] -= c; user.myAuction.push({e, c, p, expiry: Date.now() + 86400000}); save(); renderAuction(); }
-}
-
-function renderMyLots() {
-    let list = document.getElementById('my-lots-list'); list.innerHTML = "";
-    user.myAuction.forEach((l, idx) => { list.innerHTML += `<div class="card" style="display:flex;justify-content:space-between"><span>${l.e} x${l.c} - ${l.p}💰</span><button class="m-btn" style="width:auto;background:var(--red);margin:0" onclick="cancelLot(${idx})">X</button></div>`; });
-}
-
-function cancelLot(idx) { let l = user.myAuction[idx]; user.stats[l.e] = (user.stats[l.e] || 0) + l.c; user.myAuction.splice(idx, 1); save(); renderAuction(); }
-function checkAuctionExpiry() { let now = Date.now(); for(let i = user.myAuction.length-1; i>=0; i--) { if(now > user.myAuction[i].expiry) { let l = user.myAuction[i]; user.stats[l.e] = (user.stats[l.e] || 0) + l.c; user.myAuction.splice(i, 1); } } save(); }
-
-function buyLand(cost) { if(user.balance >= cost) { user.balance -= cost; if(currentLoc==='farm') user.slots_farm++; else user.slots_mine++; save(); renderMap(); updateUI(); } }
-function buySeed(e, p) { if(user.balance >= p) { user.balance -= p; user.inventory.seeds[e] = (user.inventory.seeds[e]||0)+1; save(); updateUI(); } }
-function buyObject(id, cost) { if(user.balance >= cost) { user.balance -= cost; user.inventory[id]++; save(); updateUI(); } }
-function buyAucFake(p) { if(user.balance >= p) { user.balance -= p; tg.showAlert("Куплено!"); save(); updateUI(); } }
-
-function renderShop() {
-    let h = "";
-    crops.forEach((c, idx) => {
-        let locked = idx > user.unlockedIdx;
-        h += `<div class="card" style="opacity:${locked?0.5:1}; display:flex; justify-content:space-between; align-items:center"><span>${locked?'🔒':c.e} ${c.n}<br><small>${c.p}💰</small></span><button onclick="buySeed('${c.e}', ${c.p})" class="m-btn" style="width:auto;margin:0;" ${locked?'disabled':''}>КУПИТИ</button></div>`;
-    });
-    document.getElementById('seed-list').innerHTML = h;
-}
-
+// Функції Скупщика
 function renderDealer() {
     let h = ""; let empty = true;
-    for(let e in user.stats) { if(user.stats[e] > 0) { let crop = crops.find(x => x.e === e); h += `<div class="card" style="display:flex;justify-content:space-between;"><span>${e} ${crop.n} x${user.stats[e]}</span><span style="color:var(--gold)">+${(user.stats[e]*crop.s).toFixed(1)}💰</span></div>`; empty = false; } }
+    for(let e in user.stats) { 
+        if(user.stats[e] > 0) { 
+            let crop = crops.find(x => x.e === e); 
+            h += `<div class="card" style="display:flex;justify-content:space-between;align-items:center;animation:fadeIn 0.3s ease-out;">
+                <span>${e} ${crop.n} x${user.stats[e]}<br><small style="color:var(--gold)">Ціна: ${crop.s}💰/шт</small></span>
+                <button class="m-btn" style="width:auto;margin:0;background:var(--green);color:white;padding:5px 15px;" 
+                onclick="openSell('${e}')">ПРОДАТИ</button>
+            </div>`; 
+            empty = false; 
+        } 
+    }
     document.getElementById('inventory-sell').innerHTML = empty ? "<center>Порожньо</center>" : h;
 }
 
-function sellAll() { let inc = 0; for(let e in user.stats) { let crop = crops.find(x => x.e === e); inc += user.stats[e] * crop.s; user.stats[e] = 0; } user.balance += inc; save(); renderDealer(); updateUI(); }
+function openSell(emoji) {
+    currentSellEmoji = emoji;
+    let crop = crops.find(x => x.e === emoji);
+    document.getElementById('sell-title').innerText = `ПРОДАТИ ${emoji}`;
+    document.getElementById('sell-info').innerText = `У вас є ${user.stats[emoji]} шт. ${crop.n}`;
+    document.getElementById('sell-input').value = Math.floor(user.stats[emoji] / 2);
+    
+    document.getElementById('sell-modal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+    
+    document.getElementById('confirm-sell-btn').onclick = () => {
+        let amt = parseInt(document.getElementById('sell-input').value);
+        if(amt > 0 && amt <= user.stats[emoji]) {
+            let total = amt * crop.s;
+            user.stats[emoji] -= amt;
+            user.balance += total;
+            tg.showAlert(`Успішно продано за ${total.toFixed(1)} 💰`);
+            closeAllModals();
+            save(); renderDealer(); updateUI();
+        } else { tg.showAlert("Невірна кількість!"); }
+    };
+}
+
+function sellAll() {
+    let inc = 0;
+    for(let e in user.stats) {
+        let crop = crops.find(x => x.e === e);
+        inc += user.stats[e] * crop.s;
+        user.stats[e] = 0;
+    }
+    if(inc > 0) {
+        user.balance += inc;
+        tg.showAlert(`Все продано за ${inc.toFixed(1)} 💰`);
+        save(); renderDealer(); updateUI();
+    }
+}
+
+function closeAllModals() {
+    document.getElementById('lvl-modal').style.display = 'none';
+    document.getElementById('sell-modal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+
+function openLvlModal() {
+    let next = crops[user.unlockedIdx + 1];
+    document.getElementById('lvl-task-desc').innerHTML = next ? `Зберіть ще ${next.req - user.totalHarvests} врожаїв, щоб відкрити ${next.e} ${next.n}` : "Ви досягли максимуму!";
+    document.getElementById('lvl-modal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
 
 function show(s, b) {
     document.querySelectorAll('.screen').forEach(x => x.classList.remove('active-screen'));
     document.getElementById(s + '-screen').classList.add('active-screen');
     document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
     b.classList.add('active');
-    // Ховаємо корзину в Шопі та на Аукціоні, щоб не заважала
     document.getElementById('seed-bar').style.display = (s === 'map') ? 'flex' : 'none';
     if(s === 'shop') renderShop();
-    if(s === 'auction') renderAuction();
     if(s === 'dealer') renderDealer();
 }
 
-function save() { localStorage.setItem('agro_pro_v1', JSON.stringify(user)); }
-</script></body></html>
+// Інші системні функції
+function switchLoc(loc) { currentLoc = loc; renderMap(); document.getElementById('tab-farm').className = loc === 'farm' ? 'tab-btn active' : 'tab-btn'; document.getElementById('tab-mine').className = loc === 'mine' ? 'tab-btn active' : 'tab-btn'; }
+function save() { localStorage.setItem('agro_pro_v2', JSON.stringify(user)); }
+function buyLand(cost) { if(user.balance >= cost) { user.balance -= cost; if(currentLoc==='farm') user.slots_farm++; else user.slots_mine++; save(); renderMap(); updateUI(); } }
+function buyObject(id, cost) { if(user.balance >= cost) { user.balance -= cost; user.inventory[id]++; save(); updateUI(); } }
+function buySeed(e, p) { if(user.balance >= p) { user.balance -= p; user.inventory.seeds[e] = (user.inventory.seeds[e]||0)+1; save(); updateUI(); } }
+function renderShop() {
+    let h = "";
+    crops.forEach((c, idx) => {
+        let locked = idx > user.unlockedIdx;
+        h += `<div class="card" style="opacity:${locked?0.5:1}; display:flex; justify-content:space-between; align-items:center">
+            <span>${locked?'🔒':c.e} ${c.n}<br><small>${c.p}💰</small></span>
+            <button onclick="buySeed('${c.e}', ${c.p})" class="m-btn" style="width:auto;margin:0;" ${locked?'disabled':''}>КУПИТИ</button>
+        </div>`;
+    });
+    document.getElementById('seed-list').innerHTML = h;
+}
+function checkQuests() {
+    let next = crops[user.unlockedIdx + 1];
+    if(next && user.totalHarvests >= next.req) { user.unlockedIdx++; user.level++; tg.showPopup({title:'Новий рівень!', message:'Ви відкрили '+next.n}); save(); }
+}
+</script>
+</body>
+    </html>
     
