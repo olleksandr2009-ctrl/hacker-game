@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Agro Hacker: Level Up</title>
+    <title>Agro Hacker: Ultimate</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background: #1a1a2e; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
@@ -13,30 +13,30 @@
         .auth-input { padding: 12px; margin: 10px; border-radius: 8px; border: none; width: 80%; background: #16213e; color: white; border: 1px solid #48dbfb; }
         .auth-btn { background: #48dbfb; color: #1a1a2e; padding: 12px 30px; border: none; border-radius: 8px; font-weight: bold; }
 
-        /* Верхня панель */
+        /* Шапка */
         .header { background: #16213e; padding: 10px; border-bottom: 2px solid #48dbfb; }
-        .stats-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .stats-line { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
         .lvl-bar { width: 100%; height: 8px; background: #0f3460; border-radius: 4px; overflow: hidden; }
         .lvl-progress { height: 100%; background: #4cd137; width: 0%; transition: 0.5s; }
 
-        .screen { display: none; height: 75vh; overflow-y: auto; padding: 15px; }
+        .screen { display: none; height: 72vh; overflow-y: auto; padding: 15px; box-sizing: border-box; }
         .active-screen { display: block; }
 
         /* Грядки */
-        .farm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; perspective: 600px; }
+        .farm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; perspective: 600px; padding-bottom: 80px; }
         .plot { height: 90px; background: #5d4037; border: 3px solid #3e2723; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transform: rotateX(30deg); box-shadow: 0 8px 0 #261b18; }
-        .locked { background: #2f3640 !important; border: 3px solid #7f8c8d !important; box-shadow: 0 8px 0 #1e272e !important; }
-        .lock-icon { font-size: 24px; filter: grayscale(1); }
+        .locked { background: #2f3640 !important; opacity: 0.8; }
         .plant { font-size: 40px; transform: rotateX(-30deg); }
-        .timer { font-size: 9px; color: #ffca28; transform: rotateX(-30deg); background: rgba(0,0,0,0.6); padding: 2px 4px; border-radius: 4px; margin-top: 5px; }
+        .timer { font-size: 9px; color: #ffca28; transform: rotateX(-30deg); background: rgba(0,0,0,0.6); padding: 2px 4px; border-radius: 4px; }
 
-        /* Магазин */
+        /* Картки */
         .card { background: #16213e; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #0f3460; }
-        .locked-item { opacity: 0.5; border: 1px dashed #e84118; }
         .buy-btn { background: #48dbfb; border: none; color: #1a1a2e; padding: 8px 12px; border-radius: 6px; font-weight: bold; }
+        .locked-item { opacity: 0.4; }
 
+        /* Меню */
         .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #16213e; padding: 10px 0; border-top: 2px solid #0f3460; }
-        .nav-btn { flex: 1; background: none; border: none; color: #95a5a6; display: flex; flex-direction: column; align-items: center; font-size: 11px; }
+        .nav-btn { flex: 1; background: none; border: none; color: #95a5a6; display: flex; flex-direction: column; align-items: center; font-size: 10px; }
         .nav-btn.active { color: #48dbfb; }
     </style>
 </head>
@@ -52,59 +52,111 @@
 <div class="header">
     <div class="stats-line">
         <span style="color:#f1c40f">💰 <span id="balance">10.0</span></span>
-        <span style="color:#48dbfb">💎 <span id="diamonds">5</span></span>
+        <span style="color:#48dbfb">💎 <span id="diamonds">0</span></span>
         <span id="lvl-text">LVL 1</span>
     </div>
     <div class="lvl-bar"><div id="lvl-progress" class="lvl-progress"></div></div>
-    <div style="font-size: 10px; margin-top: 5px; color: #bdc3c7;">Завдання: Зібрати Пшениці <span id="quest-count">0</span>/150</div>
+    <div id="quest-text" style="font-size: 10px; margin-top: 5px; color: #bdc3c7;">Ціль: 150 пшениці (Зібрано: <span id="quest-count">0</span>)</div>
 </div>
 
 <div id="farm-screen" class="screen active-screen">
+    <div id="scarecrow-status" style="text-align:center; font-size:12px; color:#4cd137; display:none;">🎭 Опудало активоване (-10% часу)</div>
     <div class="farm-grid">
         <div class="plot" onclick="handlePlot(0)"><div id="p0" class="plant"></div><div id="t0" class="timer" style="display:none"></div></div>
         <div class="plot" onclick="handlePlot(1)"><div id="p1" class="plant"></div><div id="t1" class="timer" style="display:none"></div></div>
-        <div class="plot locked" id="lock2" onclick="unlockPlot(2)"><div class="lock-icon">🔒</div><div style="font-size:10px; transform:rotateX(-30deg)">10 💎</div></div>
-        <div class="plot locked" id="lock3" onclick="unlockPlot(3)"><div class="lock-icon">🔒</div><div style="font-size:10px; transform:rotateX(-30deg)">25 💎</div></div>
+        <div class="plot locked" id="lock2" onclick="unlockPlot(2)"><span style="transform:rotateX(-30deg)">🔒 10💎</span></div>
+        <div class="plot locked" id="lock3" onclick="unlockPlot(3)"><span style="transform:rotateX(-30deg)">🔒 25💎</span></div>
     </div>
 </div>
 
 <div id="shop-screen" class="screen">
+    <h3 style="color:#f1c40f">НАСІННЯ</h3>
+    <div id="seed-list"></div>
+    
+    <h3 style="color:#48dbfb">АЛМАЗНИЙ ШОП</h3>
     <div class="card">
-        <div><b>🌾 Пшениця</b><br><small>0.4💰 | 30с</small></div>
-        <button class="buy-btn" onclick="buySeed(0.4, '🌾', 1.2, 30)">КУПИТИ</button>
+        <div><b>🎭 Чучало (Опудало)</b><br><small>Пришвидшує Пшеницю, Моркву, Бараболю на 10%</small></div>
+        <button class="buy-btn" id="scarecrow-btn" onclick="buyScarecrow()">15💎</button>
     </div>
-    <div class="card" id="melon-card">
-        <div><b>🍉 Кавун (LVL 2)</b><br><small>10.0💰 | 8год</small></div>
-        <div id="melon-lock">🔒 Закрито</div>
-        <button class="buy-btn" id="melon-btn" style="display:none" onclick="buySeed(10, '🍉', 15, 28800)">КУПИТИ</button>
+</div>
+
+<div id="exchange-screen" class="screen">
+    <h3 style="text-align:center">💱 ОБМІН ВАЛЮТ</h3>
+    <div class="card" style="flex-direction:column; gap:15px; padding:20px;">
+        <div style="font-size:18px;">1000 💰 ➔ 1 💎</div>
+        <button class="buy-btn" style="width:100%" onclick="exchangeMoney()">ОБМІНЯТИ</button>
     </div>
 </div>
 
 <div class="footer">
     <button class="nav-btn active" onclick="showScreen('farm', this)">🚜 ФЕРМА</button>
     <button class="nav-btn" onclick="showScreen('shop', this)">🛒 МАГАЗИН</button>
+    <button class="nav-btn" onclick="showScreen('exchange', this)">💎 ОБМІН</button>
 </div>
 
 <script>
     let tg = window.Telegram.WebApp;
     let balance = 10.0;
-    let diamonds = 5;
+    let diamonds = 0;
     let level = 1;
-    let wheatCollected = 0;
+    let wheatCount = 0;
+    let hasScarecrow = false;
     let inventory = [];
     let plots = [null, null, null, null];
     let unlockedPlots = [true, true, false, false];
 
-    function login() {
-        document.getElementById('auth-screen').style.display = 'none';
+    const crops = [
+        {name: "Пшениця", emoji: "🌾", price: 0.4, sell: 1.2, time: 30, lvl: 1},
+        {name: "Морква", emoji: "🥕", price: 0.8, sell: 2.0, time: 45, lvl: 1},
+        {name: "Бараболя", emoji: "🥔", price: 1.5, sell: 3.5, time: 60, lvl: 1},
+        {name: "Томати", emoji: "🍅", price: 2.5, sell: 6.0, time: 120, lvl: 1},
+        {name: "Кукурудза", emoji: "🌽", price: 4.0, sell: 10.0, time: 300, lvl: 1},
+        {name: "Соняшник", emoji: "🌻", price: 6.0, sell: 15.0, time: 600, lvl: 1},
+        {name: "Гарбуз", emoji: "🎃", price: 8.0, sell: 20.0, time: 1800, lvl: 2},
+        {name: "Кавун", emoji: "🍉", price: 10.0, sell: 15.0, time: 28800, lvl: 2}
+    ];
+
+    function login() { document.getElementById('auth-screen').style.display = 'none'; renderShop(); }
+
+    function renderShop() {
+        let html = '';
+        crops.forEach(c => {
+            let locked = level < c.lvl;
+            html += `<div class="card ${locked ? 'locked-item' : ''}">
+                <div><b>${c.emoji} ${c.name}</b><br><small>${c.price}💰 | ${c.time >= 3600 ? (c.time/3600)+'г' : (c.time)+'с'}</small></div>
+                ${locked ? '<span>🔒 LVL '+c.lvl+'</span>' : `<button class="buy-btn" onclick="buySeed(${c.price}, '${c.emoji}', ${c.sell}, ${c.time})">КУПИТИ</button>`}
+            </div>`;
+        });
+        document.getElementById('seed-list').innerHTML = html;
     }
 
-    function buySeed(price, type, sell, time) {
-        if (balance >= price) {
-            balance -= price;
-            inventory.push({type: type, sell: sell, time: time});
+    function buySeed(p, e, s, t) {
+        if (balance >= p) {
+            balance -= p;
+            inventory.push({emoji: e, sell: s, time: t});
             updateUI();
-        } else { tg.showAlert("Мало монет!"); }
+        } else { tg.showAlert("Недостатньо монет!"); }
+    }
+
+    function buyScarecrow() {
+        if (diamonds >= 15 && !hasScarecrow) {
+            diamonds -= 15;
+            hasScarecrow = true;
+            document.getElementById('scarecrow-status').style.display = 'block';
+            document.getElementById('scarecrow-btn').innerText = "АКТИВНО";
+            document.getElementById('scarecrow-btn').disabled = true;
+            updateUI();
+            tg.showAlert("Опудало встановлено! Тепер перші 3 культури ростуть швидше.");
+        } else { tg.showAlert("Треба 15💎 або вже куплено!"); }
+    }
+
+    function exchangeMoney() {
+        if (balance >= 1000) {
+            balance -= 1000;
+            diamonds += 1;
+            updateUI();
+            tg.showAlert("Обмін успішний! +1 💎");
+        } else { tg.showAlert("Мало монет для обміну!"); }
     }
 
     function handlePlot(id) {
@@ -114,15 +166,17 @@
 
         if (!plots[id] && inventory.length > 0) {
             let seed = inventory.pop();
-            plots[id] = { ...seed, finish: Date.now() + (seed.time * 1000), ready: false };
+            let actualTime = seed.time;
+            // Бонус опудала для Пшениці, Моркви, Бараболі
+            if (hasScarecrow && (seed.emoji === "🌾" || seed.emoji === "🥕" || seed.emoji === "🥔")) {
+                actualTime = seed.time * 0.9;
+            }
+            plots[id] = { ...seed, finish: Date.now() + (actualTime * 1000), ready: false };
             p.innerText = "🌱";
             t.style.display = "block";
             updatePlot(id);
         } else if (plots[id] && plots[id].ready) {
-            if (plots[id].type === '🌾') {
-                wheatCollected += 1;
-                checkLevel();
-            }
+            if (plots[id].emoji === "🌾") { wheatCount++; checkLvl(); }
             balance += plots[id].sell;
             plots[id] = null;
             p.innerText = "";
@@ -131,34 +185,15 @@
         }
     }
 
-    function unlockPlot(id) {
-        let price = id === 2 ? 10 : 25;
-        if (diamonds >= price) {
-            tg.showConfirm(`Відкрити нову грядку за ${price} 💎?`, (confirm) => {
-                if (confirm) {
-                    diamonds -= price;
-                    unlockedPlots[id] = true;
-                    let el = document.getElementById('lock' + id);
-                    el.classList.remove('locked');
-                    el.innerHTML = `<div id="p${id}" class="plant"></div><div id="t${id}" class="timer" style="display:none"></div>`;
-                    updateUI();
-                }
-            });
-        } else { tg.showAlert("Не вистачає алмазів!"); }
-    }
-
-    function checkLevel() {
-        let progress = (wheatCollected / 150) * 100;
-        document.getElementById('lvl-progress').style.width = Math.min(progress, 100) + "%";
-        document.getElementById('quest-count').innerText = wheatCollected;
-
-        if (wheatCollected >= 150 && level < 2) {
+    function checkLvl() {
+        let prog = (wheatCount / 150) * 100;
+        document.getElementById('lvl-progress').style.width = Math.min(prog, 100) + "%";
+        document.getElementById('quest-count').innerText = wheatCount;
+        if (wheatCount >= 150 && level < 2) {
             level = 2;
-            tg.showAlert("ВІТАЄМО! Рівень 2 досягнуто! Кавуни розблоковано!");
+            tg.showAlert("LVL UP! Нові рослини доступні!");
             document.getElementById('lvl-text').innerText = "LVL 2";
-            document.getElementById('melon-lock').style.display = "none";
-            document.getElementById('melon-btn').style.display = "block";
-            document.getElementById('melon-card').classList.remove('locked-item');
+            renderShop();
         }
     }
 
@@ -167,13 +202,25 @@
         let diff = plots[id].finish - Date.now();
         if (diff <= 0) {
             plots[id].ready = true;
-            document.getElementById('p' + id).innerText = plots[id].type;
+            document.getElementById('p' + id).innerText = plots[id].emoji;
             document.getElementById('t' + id).innerText = "ГОТОВО!";
         } else {
             let s = Math.floor(diff / 1000);
             document.getElementById('t' + id).innerText = s + "s";
             setTimeout(() => updatePlot(id), 1000);
         }
+    }
+
+    function unlockPlot(id) {
+        let p = id === 2 ? 10 : 25;
+        if (diamonds >= p) {
+            diamonds -= p;
+            unlockedPlots[id] = true;
+            let el = document.getElementById('lock' + id);
+            el.classList.remove('locked');
+            el.innerHTML = `<div id="p${id}" class="plant"></div><div id="t${id}" class="timer" style="display:none"></div>`;
+            updateUI();
+        } else { tg.showAlert("Потрібно " + p + "💎"); }
     }
 
     function showScreen(s, b) {
@@ -189,4 +236,5 @@
     }
 </script>
 </body>
-</html>
+    </html>
+    
