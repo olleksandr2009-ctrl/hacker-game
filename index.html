@@ -3,330 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>Agro Empire PRO: Профіль</title>
+    <title>Brawl Farm: Pro Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --bg: #1a1a2e; --card: rgba(30, 30, 60, 0.9); --accent: #48dbfb;
-            --gold: #f1c40f; --green: #2ecc71; --red: #e74c3c; --water: #3498db;
-            --purple: #8e44ad;
+            --gold: #f1c40f; --green: #2ecc71; --red: #e74c3c; --diamond: #00d2ff;
         }
         body {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            margin: 0; font-family: 'Segoe UI', sans-serif; color: white;
+            background: #1a1a2e; margin: 0; font-family: 'Segoe UI', sans-serif; color: white;
             overflow: hidden; user-select: none;
         }
 
-        /* Анімації */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-
-        /* Верхня панель (HEADER) */
+        /* HEADER */
         .header {
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.5); padding: 8px 15px;
-            border-bottom: 3px solid #d35400; backdrop-filter: blur(5px);
-            position: sticky; top: 0; z-index: 100;
+            background: rgba(0,0,0,0.8); padding: 10px 15px; border-bottom: 3px solid #d35400;
         }
-        .title { color: var(--gold); font-weight: bold; font-size: 16px; letter-spacing: 1px; }
-        .gold-bal { display: flex; align-items: center; gap: 5px; color: var(--gold); font-weight: bold; font-size: 14px; }
-        .bal-value { color: white; margin-left: 3px; }
+        .currency { display: flex; gap: 15px; font-weight: bold; font-size: 14px; }
+        .val-gold { color: var(--gold); }
+        .val-dia { color: var(--diamond); }
 
-        /* ОСНОВНИЙ ЕКРАН */
-        .screen {
-            display: none; height: 80vh; overflow-y: auto;
-            padding: 15px; box-sizing: border-box;
-            animation: fadeIn 0.4s ease-out;
-        }
+        /* SCREENS */
+        .screen { display: none; height: 80vh; padding: 15px; box-sizing: border-box; overflow-y: auto; text-align: center; }
         .active-screen { display: block; }
 
-        /* ЕКРАН ПРОФІЛЮ (як на малюнку) */
-        .profile-container {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
-            height: 100%; align-items: center;
+        /* ПРОФІЛЬ ТА КУКУРУДЗА */
+        .char-box { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; border: 2px solid var(--gold); margin-top: 20px; }
+        .corn-hero { font-size: 100px; position: relative; display: inline-block; }
+        .corn-eyes { position: absolute; top: 35px; left: 25px; font-size: 25px; filter: grayscale(1) contrast(2); }
+
+        /* МАГАЗИН */
+        .shop-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        .shop-item { 
+            background: var(--card); border: 2px solid var(--diamond); border-radius: 15px; 
+            padding: 15px; display: flex; justify-content: space-between; align-items: center;
         }
 
-        /* Ліва частина - Персонаж */
-        .character-zone { text-align: center; }
-        .char-card {
-            background: rgba(0,0,0,0.3); padding: 15px;
-            border-radius: 15px; border: 2px solid var(--gold);
-        }
-        .char-emoji { font-size: 100px; animation: float 3s ease-in-out infinite; display: block; }
-        .char-title { color: var(--gold); font-size: 20px; font-weight: bold; margin-top: 10px; }
+        /* КАРТА */
+        .map-box { background: #27ae60; height: 200px; border-radius: 20px; border: 5px solid #1e8449; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; }
 
-        /* Права частина - Улучшення */
-        .upgrade-panel {
-            background: rgba(30, 30, 60, 0.95);
-            padding: 15px; border-radius: 15px;
-            border: 3px solid var(--purple);
-            box-shadow: 0 0 15px var(--purple);
-        }
-        .panel-header {
-            color: white; font-size: 16px; font-weight: bold;
-            display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
-        }
-        .panel-header-icon { color: var(--accent); }
+        /* КНОПКИ */
+        .btn { background: var(--gold); color: black; border: none; padding: 12px 25px; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #d35400; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #d35400; }
+        .btn-play { background: var(--red); color: white; box-shadow: 0 4px 0 #922b21; font-size: 20px; width: 100%; }
 
-        /* Статистика (HP, SPD, DMG) */
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 8px; text-align: center; margin-bottom: 15px;
-        }
-        .stat-item {
-            display: flex; flex-direction: column; align-items: center; gap: 3px;
-        }
-        .stat-icon { font-size: 18px; }
-        .stat-label { font-size: 10px; color: #aaa; }
-        .stat-value { font-size: 16px; font-weight: bold; color: white; }
-
-        /* Уровень Прогрес */
-        .lvl-section {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 12px; font-weight: bold; margin-bottom: 5px;
-        }
-        .lvl-arrow { color: var(--green); font-size: 16px; }
-        .progress-container {
-            background: #333; height: 10px; border-radius: 5px;
-            overflow: hidden; border: 1px solid #444; margin-bottom: 15px;
-        }
-        .progress-fill {
-            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-            height: 100%; width: 50%; /* LVL 1 -> LVL 2 */
-            transition: width 0.3s;
-        }
-
-        /* ІНФО блок */
-        .info-block {
-            background: rgba(0,0,0,0.4); padding: 10px;
-            border-radius: 10px; font-size: 11px; color: #ccc;
-            margin-bottom: 15px; border-left: 3px solid var(--water);
-        }
-        .info-title { font-weight: bold; margin-bottom: 4px; color: white; }
-        .info-item { display: flex; align-items: center; gap: 5px; margin: 2px 0; }
-
-        /* Кнопка ПОКРАЩИТИ */
-        .up-btn-container { text-align: center; margin-bottom: 5px;}
-        .up-btn {
-            background: var(--accent); color: black;
-            border: none; padding: 10px 20px; border-radius: 10px;
-            font-weight: bold; font-size: 12px; width: 80%;
-            cursor: pointer; box-shadow: 0 4px 0 #1b8a9f;
-        }
-        .up-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #1b8a9f; }
-        .up-cost { color: black; font-size: 10px; margin-top: 2px; }
-
-        /* Опис LVL 2 бонусів */
-        .lvl-desc {
-            background: rgba(0,0,0,0.5); padding: 8px;
-            border-radius: 8px; font-size: 10px; text-align: left;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .lvl-desc-header { color: var(--gold); font-weight: bold; font-size: 11px; margin-bottom: 3px; }
-        .bonus-item { display: flex; align-items: center; gap: 5px; color: #fff; margin: 1px 0; }
-        .bonus-green { color: var(--green); font-weight: bold; }
-
-        /* ФУТЕР (НАВІГАЦІЯ) */
-        .footer {
-            position: fixed; bottom: 0; width: 100%;
-            display: flex; justify-content: space-around;
-            background: #111; padding: 15px 0;
-            border-top: 2px solid #0f3460; z-index: 100;
-        }
-        .nav-btn {
-            background: none; border: none; color: #95a5a6;
-            display: flex; flex-direction: column; align-items: center;
-            font-size: 11px; font-weight: bold; text-transform: uppercase; gap: 3px;
-        }
+        /* FOOTER */
+        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #111; padding: 15px 0; border-top: 2px solid #333; }
+        .nav-btn { flex: 1; background: none; border: none; color: #666; font-size: 11px; font-weight: bold; }
         .nav-btn.active { color: var(--gold); }
-        .nav-icon { font-size: 20px; }
     </style>
 </head>
 <body onload="init()">
 
 <div class="header">
-    <div class="title">AGRO EMPIRE PRO | ПРОФІЛЬ</div>
-    <div class="gold-bal">
-        💰 МОНЕТИ: <span class="bal-value" id="balance">0</span>
+    <div style="font-weight:bold">BRAWL FARM</div>
+    <div class="currency">
+        <div class="val-gold">💰 <span id="gold">0</span></div>
+        <div class="val-dia">💎 <span id="diamonds">0</span></div>
     </div>
 </div>
 
 <div id="profile-screen" class="screen active-screen">
-    <div class="profile-container">
-        
-        <div class="character-zone">
-            <div class="char-card">
-                <span class="char-emoji">🌽</span>
-                <div class="char-title">Кукурудза-Месник</div>
-            </div>
+    <div class="char-box">
+        <div class="corn-hero">
+            🌽
+            <div class="corn-eyes">😠</div>
         </div>
+        <h3>Кукурудза-Месник</h3>
+        <p>LVL: <span id="lvl">1</span> | HP: <span id="hp">100</span></p>
+    </div>
+    <br>
+    <button class="btn" onclick="upgrade()">ПОКРАЩИТИ (100 💰)</button>
+</div>
 
-        <div class="upgrade-panel">
-            <div class="panel-header">
-                <span class="panel-header-icon">🔧</span>
-                УЛУЧШЕННЯ БІЙЦЯ
-            </div>
+<div id="map-screen" class="screen">
+    <div class="map-box" onclick="startBattle()">
+        <h1 style="margin:0">🌲 ЛІС БОСІВ</h1>
+        <p>Натисни, щоб почати бій</p>
+    </div>
+    <p style="color:#aaa; font-size:12px; margin-top:10px;">Вбивай босів, щоб отримати 💎 Алмази!</p>
+</div>
 
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-icon" style="color:var(--red);">❤️</span>
-                    <span class="stat-value" id="player-hp">100</span>
-                    <span class="stat-label">HP</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-icon" style="color:var(--accent);">⋙</span>
-                    <span class="stat-value" id="player-spd">4.0</span>
-                    <span class="stat-label">SPD</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-icon" style="color:var(--gold);">⚔️</span>
-                    <span class="stat-value" id="player-pow">1.0</span>
-                    <span class="stat-label">POW</span>
-                </div>
+<div id="shop-screen" class="screen">
+    <h2>💎 МАГАЗИН АЛМАЗІВ</h2>
+    <div class="shop-grid">
+        <div class="shop-item">
+            <div>
+                <b>УЛЬТРА-СИЛА</b><br>
+                <small>+20 до атаки</small>
             </div>
-
-            <div class="lvl-section">
-                УРОВЕНЬ: <span id="current-lvl">1</span>
-                <span class="lvl-arrow">➜</span>
-                УРОВЕНЬ: <span id="next-lvl">2</span>
+            <button class="btn" style="background:var(--diamond)" onclick="buySpecial(5)">5 💎</button>
+        </div>
+        <div class="shop-item">
+            <div>
+                <b>МЕГА-ЗАХИСТ</b><br>
+                <small>+50 до HP</small>
             </div>
-            <div class="progress-container">
-                <div id="progress-fill" class="progress-fill"></div>
-            </div>
-
-            <div class="info-block">
-                <div class="info-title">ІНФО:</div>
-                <div class="info-item">• ЗА 1 ВБИВСТВО ➜ <span style="color:var(--gold);">+1 МОНЕТА 💰</span></div>
-                <div class="info-item">• М'ЯСО З ВБИТИХ ➜ <span style="color:var(--red);">🥩 ЯЩИКИ</span></div>
-            </div>
-
-            <div class="up-btn-container">
-                <button class="up-btn" onclick="upgradeBrawler()">ПОКРАЩИТИ УРОВЕНЬ</button>
-                <div class="up-cost">ВАРТІСТЬ: <span id="up-cost">100</span> 💰</div>
-            </div>
-
-            <div class="lvl-desc">
-                <div class="lvl-desc-header">🎁 Бонус LVL 2:</div>
-                <div class="bonus-item">❤️ <span class="bonus-green">+5</span> ЗДОРОВ'Я</div>
-                <div class="bonus-item">⋙ <span class="bonus-green">+3</span> ШВИДКІСТЬ</div>
-                <div class="bonus-item">🔥 <span class="bonus-green">+4</span> ПОТУЖНІСТЬ</div>
-            </div>
-
+            <button class="btn" style="background:var(--diamond)" onclick="buySpecial(10)">10 💎</button>
         </div>
     </div>
 </div>
 
-<div id="map-screen" class="screen">
-    <h2>🗾 КАРТА ФЕРМИ</h2>
-    <p>Тут буде твоя ферма, коли ми її підключимо.</p>
-</div>
-<div id="shop-screen" class="screen">
-    <h2>🛒 ШОП</h2>
-    <p>Купуй насіння та покращення тут.</p>
-</div>
-<div id="dealer-screen" class="screen">
-    <h2>🚚 СКУПЩИК</h2>
-    <p>Продавай свій врожай.</p>
-</div>
-
 <div class="footer">
-    <button class="nav-btn active" onclick="show('profile',this)">
-        <span class="nav-icon">👤</span>ПРОФІЛЬ
-    </button>
-    <button class="nav-btn" onclick="show('map',this)">
-        <span class="nav-icon">🗾</span>КАРТА
-    </button>
-    <button class="nav-btn" onclick="show('shop',this)">
-        <span class="nav-icon">🛒</span>ШОП
-    </button>
-    <button class="nav-btn" onclick="show('dealer',this)">
-        <span class="nav-icon">🚚</span>СКУПЩИК
-    </button>
+    <button class="nav-btn active" onclick="show('profile', this)">ПРОФІЛЬ</button>
+    <button class="nav-btn" onclick="show('map', this)">КАРТА</button>
+    <button class="nav-btn" onclick="show('shop', this)">МАГАЗИН</button>
 </div>
 
 <script>
 let tg = window.Telegram.WebApp;
 
-// Стати бійця (встановимо стартові з малюнка)
-let user = {
-    balance: 2000000, 
-    level: 1,
-    stats: {
-        hp: 100,
-        spd: 4.0,
-        pow: 1.0
-    },
-    upCost: 100
+let game = {
+    gold: 2000000,
+    diamonds: 0,
+    lvl: 1,
+    hp: 100,
+    dmg: 1.0
 };
 
 function init() {
-    // Чи завантажити збереження?
-    let saved = localStorage.getItem('agro_v10_profile');
-    if(saved) user = JSON.parse(saved);
     updateUI();
 }
 
 function updateUI() {
-    // Гроші
-    document.getElementById('balance').innerText = user.balance.toLocaleString('ru-RU');
-    
-    // Стати бійця
-    document.getElementById('player-hp').innerText = Math.floor(user.stats.hp);
-    document.getElementById('player-spd').innerText = user.stats.spd.toFixed(1);
-    document.getElementById('player-pow').innerText = user.stats.pow.toFixed(1);
-    
-    // Уровень та ціна
-    document.getElementById('current-lvl').innerText = user.level;
-    document.getElementById('next-lvl').innerText = user.level + 1;
-    document.getElementById('up-cost').innerText = user.upCost;
-
-    // Прогрес бар
-    let fill = document.getElementById('progress-fill');
-    // Ми робимо UP з 1 на 2, тому бар заповнений (як на малюнку). 
-    // Якщо б були ящики для апу, тут була б інша логіка.
-    fill.style.width = user.level === 1 ? '50%' : '100%'; 
+    document.getElementById('gold').innerText = game.gold.toLocaleString();
+    document.getElementById('diamonds').innerText = game.diamonds;
+    document.getElementById('lvl').innerText = game.lvl;
+    document.getElementById('hp').innerText = game.hp;
 }
 
-function upgradeBrawler() {
-    if(user.balance >= user.upCost && user.level === 1) {
-        // Списуємо гроші
-        user.balance -= user.upCost;
-        // Піднімаємо уровень
-        user.level++;
-        
-        // Додаємо статки (як на малюнку +5, +3, +4)
-        // УВАГА: +3 Швидкості - це ДУЖЕ БАГАТО, 
-        // я зробив +0.3 Швидкості та +0.4 Потужності, щоб було реалістично.
-        user.stats.hp += 5;
-        user.stats.spd += 0.3; 
-        user.stats.pow += 0.4;
-        
-        // Піднімаємо ціну апу для наступного рівня (наприклад, x2)
-        user.upCost *= 2;
-        
-        tg.showAlert("БІЙЦЯ ПОКРАЩЕНО! 🎉");
-        save();
-        updateUI();
-    } else if(user.level > 1) {
-        tg.showAlert("Для наступного рівня потрібні Ящики 🥩 (з вбитих бур'янів)!");
-    } else {
-        tg.showAlert("Недостатньо монет!");
-    }
-}
-
-function show(screenName, btn) {
-    // Приховати всі екрани
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-    // Показати потрібний
-    document.getElementById(screenName + '-screen').classList.add('active-screen'));
-    
-    // Оновити активну кнопку
+function show(s, btn) {
+    document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active-screen'));
+    document.getElementById(s + '-screen').classList.add('active-screen');
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 }
 
-function save() { localStorage.setItem('agro_v10_profile', JSON.stringify(user)); }
+function upgrade() {
+    if(game.gold >= 100) {
+        game.gold -= 100;
+        game.lvl++;
+        game.hp += 5;
+        updateUI();
+        tg.showScanQrPopup({text: "LVL UP!"}); // Маленький ефект
+        setTimeout(() => tg.closeScanQrPopup(), 500);
+    }
+}
+
+function startBattle() {
+    tg.showAlert("Бій починається! Вбивай боса 🌿");
+    // Тимчасова логіка: ніби вбили боса
+    setTimeout(() => {
+        game.diamonds += 1;
+        game.gold += 500;
+        updateUI();
+        tg.showAlert("ПЕРЕМОГА! Ти отримав 1 💎 та 500 💰");
+    }, 2000);
+}
+
+function buySpecial(cost) {
+    if(game.diamonds >= cost) {
+        game.diamonds -= cost;
+        game.dmg += 2;
+        updateUI();
+        tg.showAlert("Покращення куплено!");
+    } else {
+        tg.showAlert("Не вистачає алмазів! Вбивай босів на Карті.");
+    }
+}
 </script>
 </body>
-                        </html>
-    
+    </html>
+            
