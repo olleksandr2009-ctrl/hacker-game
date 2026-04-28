@@ -3,176 +3,370 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>Brawl Farm: Pro Edition</title>
+    <title>Brawl Farm PRO: Tactics</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --bg: #1a1a2e; --card: rgba(30, 30, 60, 0.9); --accent: #48dbfb;
-            --gold: #f1c40f; --green: #2ecc71; --red: #e74c3c; --diamond: #00d2ff;
-        }
-        body {
-            background: #1a1a2e; margin: 0; font-family: 'Segoe UI', sans-serif; color: white;
-            overflow: hidden; user-select: none;
-        }
+        body { margin: 0; background: #1a1a2e; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; user-select: none; }
+        canvas { display: block; background: #27ae60; cursor: crosshair; }
+        
+        /* UI */
+        .ui-layer { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+        .stats-bar { padding: 10px; display: flex; justify-content: space-between; background: rgba(0,0,0,0.6); border-bottom: 2px solid #333; pointer-events: all;}
+        
+        .hp-bar-container { width: 120px; height: 12px; background: #333; border: 2px solid white; border-radius: 6px; overflow: hidden; position: relative;}
+        #hp-fill { height: 100%; background: #2ecc71; width: 100%; transition: width 0.2s; }
+        
+        /* Joystick */
+        .joy-zone { position: fixed; bottom: 30px; left: 30px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: all; z-index: 20;}
+        .joy-stick { position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: rgba(255,255,255,0.5); border-radius: 50%; }
 
-        /* HEADER */
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.8); padding: 10px 15px; border-bottom: 3px solid #d35400;
-        }
-        .currency { display: flex; gap: 15px; font-weight: bold; font-size: 14px; }
-        .val-gold { color: var(--gold); }
-        .val-dia { color: var(--diamond); }
-
-        /* SCREENS */
-        .screen { display: none; height: 80vh; padding: 15px; box-sizing: border-box; overflow-y: auto; text-align: center; }
-        .active-screen { display: block; }
-
-        /* ПРОФІЛЬ ТА КУКУРУДЗА */
-        .char-box { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; border: 2px solid var(--gold); margin-top: 20px; }
-        .corn-hero { font-size: 100px; position: relative; display: inline-block; }
-        .corn-eyes { position: absolute; top: 35px; left: 25px; font-size: 25px; filter: grayscale(1) contrast(2); }
-
-        /* МАГАЗИН */
-        .shop-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
-        .shop-item { 
-            background: var(--card); border: 2px solid var(--diamond); border-radius: 15px; 
-            padding: 15px; display: flex; justify-content: space-between; align-items: center;
-        }
-
-        /* КАРТА */
-        .map-box { background: #27ae60; height: 200px; border-radius: 20px; border: 5px solid #1e8449; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; }
-
-        /* КНОПКИ */
-        .btn { background: var(--gold); color: black; border: none; padding: 12px 25px; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #d35400; }
-        .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #d35400; }
-        .btn-play { background: var(--red); color: white; box-shadow: 0 4px 0 #922b21; font-size: 20px; width: 100%; }
-
-        /* FOOTER */
-        .footer { position: fixed; bottom: 0; width: 100%; display: flex; background: #111; padding: 15px 0; border-top: 2px solid #333; }
-        .nav-btn { flex: 1; background: none; border: none; color: #666; font-size: 11px; font-weight: bold; }
-        .nav-btn.active { color: var(--gold); }
+        #game-over { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; pointer-events: all;}
+        .btn { background: #f1c40f; color: black; padding: 10px 30px; border: none; border-radius: 10px; font-weight: bold; font-size: 18px; margin-top: 20px;}
     </style>
 </head>
-<body onload="init()">
+<body>
 
-<div class="header">
-    <div style="font-weight:bold">BRAWL FARM</div>
-    <div class="currency">
-        <div class="val-gold">💰 <span id="gold">0</span></div>
-        <div class="val-dia">💎 <span id="diamonds">0</span></div>
+<div id="game-over">
+    <h1>ГРА ЗАКІНЧЕНА</h1>
+    <p>Кількість вбитих бур'янів: <span id="final-score">0</span></p>
+    <button class="btn" onclick="location.reload()">СПРОБУВАТИ ЗНОВУ</button>
+</div>
+
+<div class="ui-layer">
+    <div class="stats-bar">
+        <div>HP Кукурудзи: <div class="hp-bar-container"><div id="hp-fill"></div></div></div>
+        <div style="color:#f1c40f; font-weight:bold;">KILLS: <span id="score">0</span></div>
     </div>
 </div>
 
-<div id="profile-screen" class="screen active-screen">
-    <div class="char-box">
-        <div class="corn-hero">
-            🌽
-            <div class="corn-eyes">😠</div>
-        </div>
-        <h3>Кукурудза-Месник</h3>
-        <p>LVL: <span id="lvl">1</span> | HP: <span id="hp">100</span></p>
-    </div>
-    <br>
-    <button class="btn" onclick="upgrade()">ПОКРАЩИТИ (100 💰)</button>
-</div>
+<div class="joy-zone" id="joy-zone"><div class="joy-stick" id="joy-stick"></div></div>
 
-<div id="map-screen" class="screen">
-    <div class="map-box" onclick="startBattle()">
-        <h1 style="margin:0">🌲 ЛІС БОСІВ</h1>
-        <p>Натисни, щоб почати бій</p>
-    </div>
-    <p style="color:#aaa; font-size:12px; margin-top:10px;">Вбивай босів, щоб отримати 💎 Алмази!</p>
-</div>
-
-<div id="shop-screen" class="screen">
-    <h2>💎 МАГАЗИН АЛМАЗІВ</h2>
-    <div class="shop-grid">
-        <div class="shop-item">
-            <div>
-                <b>УЛЬТРА-СИЛА</b><br>
-                <small>+20 до атаки</small>
-            </div>
-            <button class="btn" style="background:var(--diamond)" onclick="buySpecial(5)">5 💎</button>
-        </div>
-        <div class="shop-item">
-            <div>
-                <b>МЕГА-ЗАХИСТ</b><br>
-                <small>+50 до HP</small>
-            </div>
-            <button class="btn" style="background:var(--diamond)" onclick="buySpecial(10)">10 💎</button>
-        </div>
-    </div>
-</div>
-
-<div class="footer">
-    <button class="nav-btn active" onclick="show('profile', this)">ПРОФІЛЬ</button>
-    <button class="nav-btn" onclick="show('map', this)">КАРТА</button>
-    <button class="nav-btn" onclick="show('shop', this)">МАГАЗИН</button>
-</div>
+<canvas id="gameCanvas"></canvas>
 
 <script>
-let tg = window.Telegram.WebApp;
+// Ініціалізація Canvas
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+// Встановлюємо розмір на весь екран
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
 
-let game = {
-    gold: 2000000,
-    diamonds: 0,
-    lvl: 1,
-    hp: 100,
-    dmg: 1.0
+// --- НАЛАШТУВАННЯ КАРТИ (Трава і Камінці) ---
+const TILE_SIZE = 50; // Розмір одного блоку
+
+// 0 - трава (темна), 1 - стіна (камінь), 2 - кущ (світлий, ховає)
+// Проста мапа: периметр із каменів, кущі по центру
+const map = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,2,2,0,0,1,1,0,0,2,2,0,0,0,1],
+    [1,0,2,2,0,0,1,1,0,0,2,2,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,1,1,0,0,0,0,1,1,0,0,1,0,1],
+    [1,0,0,1,1,0,0,0,0,1,1,0,0,1,0,1],
+    [1,0,0,0,0,0,0,2,2,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+const mapW = map[0].length * TILE_SIZE;
+const mapH = map.length * TILE_SIZE;
+
+// --- ОБ'ЄКТИ ГРИ ---
+let player = {
+    x: mapW/2, y: mapH/2, // Позиція на великій мапі
+    r: 15, hp: 100, maxHp: 100,
+    speed: 3.5,
+    inBush: false,
+    emoji: "🌽", eyes: "😠"
 };
 
-function init() {
-    updateUI();
-}
+let bullets = []; // Кулі гравця
+let enemyBullets = []; // Кулі ворогів
+let enemies = []; // Злі бур'яни
+let score = 0;
+let gameActive = true;
 
-function updateUI() {
-    document.getElementById('gold').innerText = game.gold.toLocaleString();
-    document.getElementById('diamonds').innerText = game.diamonds;
-    document.getElementById('lvl').innerText = game.lvl;
-    document.getElementById('hp').innerText = game.hp;
-}
+// Управління (Джойстик)
+let joy = { x: 0, y: 0, active: false };
 
-function show(s, btn) {
-    document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active-screen'));
-    document.getElementById(s + '-screen').classList.add('active-screen');
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-}
+// --- ЛОГІКА МАЛЮВАННЯ ТА КАМЕРИ ---
+// Камера слідує за гравцем
+let camera = { x: 0, y: 0 };
 
-function upgrade() {
-    if(game.gold >= 100) {
-        game.gold -= 100;
-        game.lvl++;
-        game.hp += 5;
-        updateUI();
-        tg.showScanQrPopup({text: "LVL UP!"}); // Маленький ефект
-        setTimeout(() => tg.closeScanQrPopup(), 500);
+function drawMap() {
+    for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[y].length; x++) {
+            let tile = map[y][x];
+            let drawX = x * TILE_SIZE - camera.x;
+            let drawY = y * TILE_SIZE - camera.y;
+
+            if (tile === 1) { ctx.fillStyle = '#5d4037'; // Камінь
+            } else if (tile === 2) { ctx.fillStyle = '#2ecc71'; // Кущ (світлий)
+            } else { ctx.fillStyle = '#1e8449'; // Трава (темна)
+            }
+            ctx.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+            
+            // Легка сітка для об'єму
+            if(tile !== 1) {
+                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                ctx.strokeRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+            }
+        }
     }
 }
 
-function startBattle() {
-    tg.showAlert("Бій починається! Вбивай боса 🌿");
-    // Тимчасова логіка: ніби вбили боса
-    setTimeout(() => {
-        game.diamonds += 1;
-        game.gold += 500;
-        updateUI();
-        tg.showAlert("ПЕРЕМОГА! Ти отримав 1 💎 та 500 💰");
-    }, 2000);
+// Перевірка колізії (зі стінами)
+function checkWallCollision(newX, newY, r) {
+    let gridX = Math.floor(newX / TILE_SIZE);
+    let gridY = Math.floor(newY / TILE_SIZE);
+    
+    // Перевіряємо 4 точки навколо об'єкта
+    if (gridX >= 0 && gridX < map[0].length && gridY >= 0 && gridY < map.length) {
+        if (map[gridY][gridX] === 1) return true; // Стіна
+    }
+    // Додаткові перевірки для радіуса
+    if (map[Math.floor((newY-r)/TILE_SIZE)][Math.floor((newX-r)/TILE_SIZE)] === 1) return true;
+    if (map[Math.floor((newY+r)/TILE_SIZE)][Math.floor((newX+r)/TILE_SIZE)] === 1) return true;
+    
+    return false;
 }
 
-function buySpecial(cost) {
-    if(game.diamonds >= cost) {
-        game.diamonds -= cost;
-        game.dmg += 2;
-        updateUI();
-        tg.showAlert("Покращення куплено!");
-    } else {
-        tg.showAlert("Не вистачає алмазів! Вбивай босів на Карті.");
+// Перевірка, чи знаходиться об'єкт у кущах (хованка)
+function checkIfInBush(x, y) {
+    let gridX = Math.floor(x / TILE_SIZE);
+    let gridY = Math.floor(y / TILE_SIZE);
+    if (gridX >= 0 && gridX < map[0].length && gridY >= 0 && gridY < map.length) {
+        return map[gridY][gridX] === 2; // Перебуває в тайлі типу 2 (Кущ)
     }
+    return false;
 }
+
+// --- СПАВН ВОРОГІВ ---
+function spawnEnemy() {
+    if (!gameActive || enemies.length > 5) return;
+    
+    let x, y;
+    // Шукаємо місце, яке не є стіною
+    do {
+        x = Math.random() * (mapW - 100) + 50;
+        y = Math.random() * (mapH - 100) + 50;
+    } while (checkWallCollision(x, y, 20) || checkIfInBush(x, y));
+    
+    enemies.push({
+        x, y, r: 18, hp: 3, speed: 1.2, 
+        lastShot: Date.now(), 
+        cooldown: 2000 // Стріляє раз на 2 секунди
+    });
+}
+// Спавнимо кожні 4 секунди
+setInterval(spawnEnemy, 4000);
+
+// --- СТРІЛЬБА (Тап по екрану) ---
+window.addEventListener('mousedown', e => {
+    // Ігноруємо тапи по джойстику та UI
+    if (e.target.closest('#joy-zone') || e.target.closest('.stats-bar')) return;
+    if (!gameActive) return;
+    
+    // Перетворюємо координати екрану в координати мапи
+    let targetX = e.clientX + camera.x;
+    let targetY = e.clientY + camera.y;
+    
+    let angle = Math.atan2(targetY - player.y, targetX - player.x);
+    
+    bullets.push({
+        x: player.x, y: player.y,
+        vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10,
+        r: 4
+    });
+});
+
+// --- ЦИКЛ ГРИ ---
+function update() {
+    if (!gameActive) return;
+
+    // 1. Рух гравця з джойстика
+    let moveX = joy.x * player.speed;
+    let moveY = joy.y * player.speed;
+    
+    // Колізія по X
+    if (!checkWallCollision(player.x + moveX, player.y, player.r)) {
+        player.x += moveX;
+    }
+    // Колізія по Y
+    if (!checkWallCollision(player.x, player.y + moveY, player.r)) {
+        player.y += moveY;
+    }
+    
+    // Межі мапи
+    player.x = Math.max(player.r, Math.min(mapW - player.r, player.x));
+    player.y = Math.max(player.r, Math.min(mapH - player.r, player.y));
+    
+    // 2. Оновлення камери (центр на гравці)
+    camera.x = player.x - W / 2;
+    camera.y = player.y - H / 2;
+    // Обмеження камери межами мапи
+    camera.x = Math.max(0, Math.min(mapW - W, camera.x));
+    camera.y = Math.max(0, Math.min(mapH - H, camera.y));
+
+    // 3. Статус хованки (в траві)
+    player.inBush = checkIfInBush(player.x, player.y);
+
+    // 4. Кулі гравця
+    bullets.forEach((b, i) => {
+        b.x += b.vx; b.y += b.vy;
+        
+        // Влучання в стіну
+        if (checkWallCollision(b.x, b.y, b.r)) { bullets.splice(i, 1); return; }
+        
+        // Влучання у ворогів
+        enemies.forEach((en, ei) => {
+            if (Math.hypot(en.x - b.x, en.y - b.y) < en.r + b.r) {
+                en.hp--;
+                bullets.splice(i, 1);
+                if (en.hp <= 0) { enemies.splice(ei, 1); score++; }
+            }
+        });
+    });
+
+    // 5. Вороги (Штучний Інтелект)
+    enemies.forEach((en, ei) => {
+        let dist = Math.hypot(player.x - en.x, player.y - en.y);
+        let playerVisible = !player.inBush || dist < 100; // Видно, якщо не в кущі АБО підійшов впритул
+
+        if (playerVisible && dist < 350) {
+            // Іде до гравця, якщо бачить
+            let angle = Math.atan2(player.y - en.y, player.x - en.x);
+            let mX = Math.cos(angle) * en.speed;
+            let mY = Math.sin(angle) * en.speed;
+            
+            if (!checkWallCollision(en.x + mX, en.y, en.r)) en.x += mX;
+            if (!checkWallCollision(en.x, en.y + mY, en.r)) en.y += mY;
+            
+            // Стріляє, якщо кулдаун пройшов
+            if (Date.now() - en.lastShot > en.cooldown) {
+                // Перевірка, чи немає стіни між ворогом і гравцем (Raycasting)
+                let wallBetween = false;
+                // Спрощена перевірка: пройдемося по лінії між ними
+                for (let t = 0.1; t < 1; t += 0.1) {
+                    let testX = en.x + (player.x - en.x) * t;
+                    let testY = en.y + (player.y - en.y) * t;
+                    if(checkWallCollision(testX, testY, 5)) { wallBetween = true; break; }
+                }
+
+                if (!wallBetween) {
+                    enemyBullets.push({
+                        x: en.x, y: en.y,
+                        vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6,
+                        r: 5
+                    });
+                    en.lastShot = Date.now();
+                }
+            }
+        }
+    });
+
+    // 6. Кулі ворогів
+    enemyBullets.forEach((b, i) => {
+        b.x += b.vx; b.y += b.vy;
+        
+        // Влучання в стіну
+        if (checkWallCollision(b.x, b.y, b.r)) { enemyBullets.splice(i, 1); return; }
+        
+        // Влучання в гравця
+        if (Math.hypot(player.x - b.x, player.y - b.y) < player.r + b.r) {
+            player.hp -= 10;
+            enemyBullets.splice(i, 1);
+            document.getElementById('hp-fill').style.width = (player.hp / player.maxHp) * 100 + "%";
+            if (player.hp <= 0) {
+                gameActive = false;
+                document.getElementById('game-over').style.display = 'flex';
+                document.getElementById('final-score').innerText = score;
+            }
+        }
+    });
+
+    // Оновлення рахунку
+    document.getElementById('score').innerText = score;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.save();
+    // 1. Малюємо карту
+    drawMap();
+    
+    // 2. Малюємо ворогів (Бур'яни)
+    ctx.font = "24px Arial";
+    enemies.forEach(en => {
+        ctx.fillText("🌿", en.x - camera.x - 12, en.y - camera.y + 8);
+    });
+
+    // 3. Малюємо кулі
+    ctx.fillStyle = '#f1c40f'; // Мої (попкорн)
+    bullets.forEach(b => {
+        ctx.beginPath(); ctx.arc(b.x - camera.x, b.y - camera.y, b.r, 0, 7); ctx.fill();
+    });
+    ctx.fillStyle = '#e74c3c'; // Ворогів (шипи)
+    enemyBullets.forEach(b => {
+        ctx.beginPath(); ctx.arc(b.x - camera.x, b.y - camera.y, b.r, 0, 7); ctx.fill();
+    });
+
+    // 4. Малюємо гравця (Кукурудза)
+    ctx.font = "32px Arial";
+    // Якщо в кущах, малюємо напівпрозорим
+    ctx.globalAlpha = player.inBush ? 0.5 : 1.0;
+    
+    // Малюємо емодзі кукурудзи
+    ctx.fillText(player.emoji, player.x - camera.x - 16, player.y - camera.y + 12);
+    // Малюємо очі (angry)
+    ctx.font = "14px Arial";
+    ctx.fillStyle = 'black';
+    ctx.fillText(player.eyes, player.x - camera.x - 6, player.y - camera.y - 1);
+    
+    ctx.restore(); // Повертаємо альфу
+
+    update();
+    requestAnimationFrame(draw);
+}
+
+// --- ЛОГІКА ДЖОЙСТИКА (Touch) ---
+const joyZone = document.getElementById('joy-zone');
+const stick = document.getElementById('joy-stick');
+
+joyZone.addEventListener('touchstart', e => { joy.active = true; handleJoy(e); }, {passive: false});
+joyZone.addEventListener('touchmove', e => { handleJoy(e); e.preventDefault(); }, {passive: false});
+joyZone.addEventListener('touchend', e => { 
+    joy = { x: 0, y: 0, active: false }; 
+    stick.style.transform = `translate(0, 0)`;
+});
+
+function handleJoy(e) {
+    if (!joy.active) return;
+    let rect = joyZone.getBoundingClientRect();
+    let touch = e.touches[0];
+    let centerX = rect.left + 50;
+    let centerY = rect.top + 50;
+    
+    let dx = touch.clientX - centerX;
+    let dy = touch.clientY - centerY;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    let max = 35; // Макс. радіус руху стіка
+    
+    if (dist > max) {
+        dx *= max/dist;
+        dy *= max/dist;
+    }
+    
+    stick.style.transform = `translate(${dx}px, ${dy}px)`;
+    
+    // Встановлюємо нормалізований вектор руху від -1 до 1
+    joy.x = dx / max;
+    joy.y = dy / max;
+}
+
+// Починаємо гру
+draw();
 </script>
 </body>
     </html>
-            
+    
