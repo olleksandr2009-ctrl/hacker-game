@@ -1,38 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>AgroCraft: Mobile & PC</title>
+    <title>AgroCraft: Isometric Edition</title>
     <style>
-        body { margin: 0; background: #87ceeb; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        body { margin: 0; background: #2c3e50; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; }
         canvas { display: block; }
-
-        /* Джойстик для мобільних */
-        .joystick-zone { position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.2); border-radius: 50%; z-index: 10; }
-        .joystick-stick { position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: #fff; border-radius: 50%; opacity: 0.5; }
-
-        /* Інвентар */
-        .inventory { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; }
-        .slot { width: 40px; height: 40px; background: #8b8b8b; border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
-        .slot.active { border-color: #fff; background: #aaa; }
-
-        .hud { position: fixed; top: 10px; left: 10px; pointer-events: none; background: rgba(0,0,0,0.3); padding: 5px; }
+        .hud { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; pointer-events: none; }
+        .inventory { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 12px; }
+        .slot { width: 50px; height: 50px; background: #555; border: 3px solid #333; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; transition: 0.2s; }
+        .slot.active { border-color: #f1c40f; background: #888; transform: translateY(-5px); }
     </style>
 </head>
 <body>
 
-<div class="hud">Керування: WASD або Джойстик<br>ЛКМ - Ставити, ПКМ - Ламати</div>
-
-<div class="joystick-zone" id="joy-zone">
-    <div class="joystick-stick" id="joy-stick"></div>
+<div class="hud">
+    <b>AgroCraft Isometric</b><br>
+    Рух: WASD / Стрілочки<br>
+    Клік: Поставити блок
 </div>
 
 <div class="inventory">
-    <div class="slot active" onclick="sel(1, this)">🟫</div>
+    <div class="slot active" onclick="sel(1, this)">🌱</div>
     <div class="slot" onclick="sel(2, this)">🧱</div>
-    <div class="slot" onclick="sel(3, this)">🌿</div>
-    <div class="slot" onclick="sel(4, this)">💎</div>
+    <div class="slot" onclick="sel(3, this)">🏠</div>
+    <div class="slot" onclick="sel(4, this)">🌲</div>
 </div>
 
 <canvas id="game"></canvas>
@@ -43,94 +36,110 @@ const ctx = canvas.getContext('2d');
 let W = canvas.width = window.innerWidth;
 let H = canvas.height = window.innerHeight;
 
-const TILE = 40;
-let world = {};
-let player = { x: 0, y: 0, speed: 4, block: 1 };
-let cam = { x: 0, y: 0 };
-let keys = {};
-let joy = { dx: 0, dy: 0, active: false };
+const TILE_W = 64; // Ширина ромба
+const TILE_H = 32; // Висота ромба (вдвічі менша для кута)
 
-// Початковий світ
-for(let x = -10; x < 10; x++) {
-    for(let y = 2; y < 6; y++) {
-        world[`${x},${y}`] = (y === 2) ? 3 : 1;
+let world = {};
+let keys = {};
+let player = { x: 0, y: 0, speed: 0.1, block: 1 };
+let cam = { x: W/2, y: H/4 };
+
+// Генерація початкової карти
+for(let x = -5; x <= 5; x++) {
+    for(let y = -5; y <= 5; y++) {
+        world[`${x},${y}`] = 1;
     }
+}
+
+// Перетворення координат звичайних в ізометричні
+function toIso(x, y) {
+    return {
+        isoX: (x - y) * (TILE_W / 2),
+        isoY: (x + y) * (TILE_H / 2)
+    };
 }
 
 function update() {
-    // Рух клавіатурою
-    if (keys['w'] || keys['ц']) player.y -= player.speed;
-    if (keys['s'] || keys['і']) player.y += player.speed;
-    if (keys['a'] || keys['ф']) player.x -= player.speed;
-    if (keys['d'] || keys['в']) player.x += player.speed;
-
-    // Рух джойстиком
-    player.x += joy.dx * player.speed;
-    player.y += joy.dy * player.speed;
-
-    // Слідування камери
-    cam.x += (player.x - cam.x - W/2) * 0.1;
-    cam.y += (player.y - cam.y - H/2) * 0.1;
+    if (keys['w'] || keys['ArrowUp']) { player.x -= player.speed; player.y -= player.speed; }
+    if (keys['s'] || keys['ArrowDown']) { player.x += player.speed; player.y += player.speed; }
+    if (keys['a'] || keys['ArrowLeft']) { player.x -= player.speed; player.y += player.speed; }
+    if (keys['d'] || keys['ArrowRight']) { player.x += player.speed; player.y -= player.speed; }
 }
 
 function draw() {
+    update();
     ctx.clearRect(0, 0, W, H);
     ctx.save();
-    ctx.translate(-cam.x, -cam.y);
+    ctx.translate(cam.x, cam.y);
 
-    // Блоки
-    for(let key in world) {
+    // Малюємо сітку світу
+    for (let key in world) {
         let [x, y] = key.split(',').map(Number);
-        ctx.fillStyle = {1:'#5d4037', 2:'#7f8c8d', 3:'#2ecc71', 4:'#00d2ff'}[world[key]];
-        ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
-        ctx.strokeStyle = "rgba(0,0,0,0.1)";
-        ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
+        let pos = toIso(x, y);
+        drawTile(pos.isoX, pos.isoY, world[key]);
     }
 
-    // Персонаж
-    ctx.fillStyle = "#e0ac69"; 
-    ctx.fillRect(player.x - 15, player.y - 40, 30, 30); // Голова
-    ctx.fillStyle = "#00f"; 
-    ctx.fillRect(player.x - 15, player.y - 10, 30, 40); // Тіло
+    // Малюємо персонажа
+    let pPos = toIso(player.x, player.y);
+    drawPlayer(pPos.isoX, pPos.isoY);
 
     ctx.restore();
-    update();
     requestAnimationFrame(draw);
 }
 
-// Події клавіатури
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+function drawTile(x, y, type) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + TILE_W / 2, y + TILE_H / 2);
+    ctx.lineTo(x, y + TILE_H);
+    ctx.lineTo(x - TILE_W / 2, y + TILE_H / 2);
+    ctx.closePath();
 
-// Будування
-canvas.onmousedown = e => {
-    let gx = Math.floor((e.clientX + cam.x) / TILE);
-    let gy = Math.floor((e.clientY + cam.y) / TILE);
-    if(e.button === 0) world[`${gx},${gy}`] = player.block;
-    else delete world[`${gx},${gy}`];
-};
-canvas.oncontextmenu = e => e.preventDefault();
+    // Кольори для ізометрії
+    const colors = { 1: '#27ae60', 2: '#7f8c8d', 3: '#e74c3c', 4: '#2ecc71' };
+    ctx.fillStyle = colors[type];
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.2)";
+    ctx.stroke();
 
-// Логіка джойстика
-const joyZone = document.getElementById('joy-zone');
-const joyStick = document.getElementById('joy-stick');
+    // Додаємо "бік" блоку для об'єму
+    ctx.fillStyle = "rgba(0,0,0,0.1)";
+    ctx.beginPath();
+    ctx.moveTo(x - TILE_W / 2, y + TILE_H / 2);
+    ctx.lineTo(x, y + TILE_H);
+    ctx.lineTo(x, y + TILE_H + 10);
+    ctx.lineTo(x - TILE_W / 2, y + TILE_H / 2 + 10);
+    ctx.fill();
+}
 
-joyZone.ontouchstart = () => joy.active = true;
-window.ontouchmove = e => {
-    if(!joy.active) return;
-    let rect = joyZone.getBoundingClientRect();
-    let touch = e.touches[0];
-    let x = touch.clientX - (rect.left + 50);
-    let y = touch.clientY - (rect.top + 50);
-    let dist = Math.sqrt(x*x + y*y);
-    let max = 40;
-    if(dist > max) { x *= max/dist; y *= max/dist; }
-    joyStick.style.transform = `translate(${x}px, ${y}px)`;
-    joy.dx = x/max; joy.dy = y/max;
-};
-window.ontouchend = () => {
-    joy.active = false; joy.dx = 0; joy.dy = 0;
-    joyStick.style.transform = `translate(0, 0)`;
+function drawPlayer(x, y) {
+    // Тінь
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + TILE_H/2, 10, 5, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Тіло
+    ctx.fillStyle = "#f39c12";
+    ctx.fillRect(x - 10, y - 40, 20, 40);
+    // Голова
+    ctx.fillStyle = "#e0ac69";
+    ctx.fillRect(x - 8, y - 55, 16, 16);
+}
+
+window.addEventListener('keydown', e => keys[e.key] = true);
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+// Будування в ізометрії (складніша математика кліку)
+canvas.onclick = (e) => {
+    let mouseX = e.clientX - cam.x;
+    let mouseY = e.clientY - cam.y;
+
+    // Зворотне перетворення координат
+    let gy = (2 * mouseY - mouseX) / 2 / (TILE_H / 2);
+    let gx = (mouseX + gy * (TILE_W / 2)) / (TILE_W / 2);
+    
+    world[`${Math.round(gx)},${Math.round(gy)}`] = player.block;
 };
 
 function sel(id, el) {
@@ -143,4 +152,3 @@ draw();
 </script>
 </body>
 </html>
-
