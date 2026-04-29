@@ -3,138 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D AgroCraft Mobile</title>
+    <title>Hardcore Agro-Boy</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87ceeb; font-family: sans-serif; touch-action: none; }
-        canvas { display: block; }
+        body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; touch-action: none; }
+        canvas { display: block; background: linear-gradient(#1a2a6c, #b21f1f, #fdbb2d); }
         
-        /* Кнопки дій */
-        .controls { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
-        .btn { width: 60px; height: 60px; background: rgba(0,0,0,0.5); color: white; border: 2px solid white; border-radius: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
-        
-        /* Стіки джойстиків */
-        .joy-zone { position: fixed; bottom: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; z-index: 10; border: 1px solid rgba(255,255,255,0.3); }
-        #move-joy { left: 20px; }
-        #look-joy { right: 100px; bottom: 20px; display: none; } /* Ми використаємо свайпи замість другого джойстика для зручності */
-        
-        .stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.5; }
-        
-        #crosshair { position: fixed; top: 50%; left: 50%; width: 10px; height: 10px; background: white; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        .ui { position: fixed; top: 10px; left: 10px; color: white; text-shadow: 2px 2px #000; font-size: 20px; }
+        .controls { position: fixed; bottom: 20px; left: 20px; display: flex; gap: 15px; }
+        .btn { width: 70px; height: 70px; background: rgba(255,255,255,0.2); border: 2px solid #fff; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; user-select: none; }
+        #btn-jump { position: fixed; bottom: 20px; right: 20px; width: 85px; height: 85px; background: rgba(255,255,0,0.4); }
     </style>
 </head>
 <body>
 
-<div id="crosshair"></div>
-
-<div class="joy-zone" id="move-joy">
-    <div class="stick" id="move-stick"></div>
-</div>
+<div class="ui">Спроби: <span id="deaths">0</span></div>
 
 <div class="controls">
-    <div class="btn" id="btn-break">ЛОМ</div>
-    <div class="btn" id="btn-place">СТАВ</div>
+    <div class="btn" id="btn-left">←</div>
+    <div class="btn" id="btn-right">→</div>
 </div>
+<div class="btn" id="btn-jump">↑</div>
 
-<script type="importmap">
-    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
-</script>
+<canvas id="game"></canvas>
 
-<script type="module">
-import * as THREE from 'three';
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+let deaths = 0;
+let player = { x: 50, y: 300, vx: 0, vy: 0, w: 30, h: 30, speed: 0.8, friction: 0.85, jump: -15, gravity: 0.8, onGround: false };
+let keys = { left: false, right: false };
 
-const light = new THREE.AmbientLight(0xffffff, 1);
-scene.add(light);
+// Рівень: x, y, ширина, висота, тип (0 - блок, 1 - шипи, 2 - фініш)
+const level = [
+    {x: 0, y: 400, w: 200, h: 50, type: 0},
+    {x: 250, y: 350, w: 100, h: 20, type: 0},
+    {x: 400, y: 350, w: 150, h: 20, type: 1}, // ШИПИ
+    {x: 600, y: 300, w: 100, h: 20, type: 0},
+    {x: 750, y: 250, w: 100, h: 20, type: 0},
+    {x: 900, y: 400, w: 200, h: 20, type: 1}, // ШИПИ
+    {x: 1150, y: 350, w: 100, h: 20, type: 0},
+    {x: 1300, y: 200, w: 50, h: 20, type: 2}, // ФІНІШ
+];
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const grassMat = new THREE.MeshLambertMaterial({ color: 0x2ecc71 });
-const blocks = [];
-
-function addBlock(x, y, z) {
-    const mesh = new THREE.Mesh(geometry, grassMat);
-    mesh.position.set(x, y, z);
-    scene.add(mesh);
-    blocks.push(mesh);
-}
-
-for(let x = -5; x < 5; x++) {
-    for(let z = -5; z < 5; z++) addBlock(x, 0, z);
-}
-
-// ЛОГІКА РУХУ (Джойстик)
-let moveDir = { x: 0, z: 0 };
-const moveJoy = document.getElementById('move-joy');
-const moveStick = document.getElementById('move-stick');
-
-moveJoy.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    let touch = e.touches[0];
-    let rect = moveJoy.getBoundingClientRect();
-    let x = touch.clientX - (rect.left + 60);
-    let y = touch.clientY - (rect.top + 60);
-    let dist = Math.sqrt(x*x + y*y);
-    if(dist > 50) { x *= 50/dist; y *= 50/dist; }
-    moveStick.style.transform = `translate(${x}px, ${y}px)`;
-    moveDir.x = x/50; moveDir.z = y/50;
-});
-
-moveJoy.addEventListener('touchend', () => {
-    moveStick.style.transform = `translate(0, 0)`;
-    moveDir = { x: 0, z: 0 };
-});
-
-// ЛОГІКА ОГЛЯДУ (Свайпи по правій частині екрану)
-let yaw = 0, pitch = 0;
-window.addEventListener('touchmove', (e) => {
-    if(e.touches[0].clientX > window.innerWidth / 2) {
-        let touch = e.touches[0];
-        if (window.lastTouch) {
-            yaw -= (touch.clientX - window.lastTouch.clientX) * 0.005;
-            pitch -= (touch.clientY - window.lastTouch.clientY) * 0.005;
-            pitch = Math.max(-1.5, Math.min(1.5, pitch));
-            camera.rotation.set(pitch, yaw, 0, 'YXZ');
-        }
-        window.lastTouch = { clientX: touch.clientX, clientY: touch.clientY };
-    }
-}, {passive: false});
-window.addEventListener('touchend', () => window.lastTouch = null);
-
-// ДІЇ (Ламати/Ставити)
-const raycaster = new THREE.Raycaster();
-const interact = (type) => {
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-    const intersects = raycaster.intersectObjects(blocks);
-    if (intersects.length > 0) {
-        const obj = intersects[0];
-        if(type === 'break') {
-            scene.remove(obj.object);
-            blocks.splice(blocks.indexOf(obj.object), 1);
-        } else {
-            const p = obj.object.position.clone().add(obj.face.normal);
-            addBlock(p.x, p.y, p.z);
-        }
-    }
+// Керування
+const setup = (id, k) => {
+    const el = document.getElementById(id);
+    el.ontouchstart = (e) => { e.preventDefault(); if(k) keys[k] = true; else if(player.onGround) player.vy = player.jump; };
+    el.ontouchend = () => { if(k) keys[k] = false; };
 };
+setup('btn-left', 'left');
+setup('btn-right', 'right');
+setup('btn-jump', null);
 
-document.getElementById('btn-break').onclick = () => interact('break');
-document.getElementById('btn-place').onclick = () => interact('place');
-
-camera.position.set(0, 1.6, 5);
-
-function animate() {
-    requestAnimationFrame(animate);
-    camera.translateZ(moveDir.z * 0.1);
-    camera.translateX(moveDir.x * 0.1);
-    camera.position.y = 1.6;
-    renderer.render(scene, camera);
+function reset() {
+    player.x = 50; player.y = 300; player.vx = 0; player.vy = 0;
+    deaths++;
+    document.getElementById('deaths').innerText = deaths;
 }
-animate();
+
+function update() {
+    if (keys.left) player.vx -= player.speed;
+    if (keys.right) player.vx += player.speed;
+    
+    player.vx *= player.friction;
+    player.vy += player.gravity;
+    
+    player.x += player.vx;
+    player.y += player.vy;
+    player.onGround = false;
+
+    // Перевірка зіткнень
+    level.forEach(p => {
+        if (player.x < p.x + p.w && player.x + player.w > p.x &&
+            player.y < p.y + p.h && player.y + player.h > p.y) {
+            
+            if (p.type === 1) reset(); // Смерть на шипах
+            if (p.type === 2) { alert("ПЕРЕМОГА!"); reset(); deaths = 0; } // Фініш
+            
+            // Колізія зверху
+            if (player.vy > 0 && player.y + player.h - player.vy <= p.y) {
+                player.y = p.y - player.h;
+                player.vy = 0;
+                player.onGround = true;
+            }
+        }
+    });
+
+    if (player.y > H) reset(); // Впав у безодню
+}
+
+function draw() {
+    update();
+    ctx.clearRect(0, 0, W, H);
+
+    // Камера за гравцем (тільки по X)
+    let camX = player.x - W/4;
+    ctx.save();
+    ctx.translate(-camX, 0);
+
+    level.forEach(p => {
+        if (p.type === 0) ctx.fillStyle = "#fff";
+        if (p.type === 1) ctx.fillStyle = "#ff4d4d"; // Шипи
+        if (p.type === 2) ctx.fillStyle = "#00ff00"; // Фініш
+        
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        
+        // Малюємо "зуби" для шипів
+        if (p.type === 1) {
+            ctx.fillStyle = "#fff";
+            for(let i=0; i<p.w; i+=10) {
+                ctx.beginPath();
+                ctx.moveTo(p.x + i, p.y);
+                ctx.lineTo(p.x + i + 5, p.y - 10);
+                ctx.lineTo(p.x + i + 10, p.y);
+                ctx.fill();
+            }
+        }
+    });
+
+    // Гравець
+    ctx.fillStyle = "#fdbb2d";
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.strokeStyle = "#fff";
+    ctx.strokeRect(player.x, player.y, player.w, player.h);
+
+    ctx.restore();
+    requestAnimationFrame(draw);
+}
+
+draw();
 </script>
 </body>
 </html>
