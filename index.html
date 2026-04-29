@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Hardcore Agro-Boy</title>
+    <title>Agro-Boy Remastered</title>
     <style>
-        body { margin: 0; background: #222; overflow: hidden; font-family: sans-serif; touch-action: none; }
-        canvas { display: block; background: linear-gradient(#1a2a6c, #b21f1f, #fdbb2d); }
-        
-        .ui { position: fixed; top: 10px; left: 10px; color: white; text-shadow: 2px 2px #000; font-size: 20px; }
-        .controls { position: fixed; bottom: 20px; left: 20px; display: flex; gap: 15px; }
-        .btn { width: 70px; height: 70px; background: rgba(255,255,255,0.2); border: 2px solid #fff; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; user-select: none; }
-        #btn-jump { position: fixed; bottom: 20px; right: 20px; width: 85px; height: 85px; background: rgba(255,255,0,0.4); }
+        body { margin: 0; background: #1a1a2e; overflow: hidden; font-family: 'Arial', sans-serif; touch-action: none; }
+        canvas { display: block; }
+        .ui { position: fixed; top: 15px; left: 15px; color: #deff9a; font-size: 22px; font-weight: bold; text-shadow: 2px 2px #000; pointer-events: none; }
+        .controls { position: fixed; bottom: 25px; left: 25px; display: flex; gap: 20px; }
+        .btn { width: 75px; height: 75px; background: rgba(255,255,255,0.1); border: 2px solid rgba(222,255,154,0.5); border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 35px; user-select: none; }
+        #btn-jump { position: fixed; bottom: 25px; right: 25px; width: 90px; height: 90px; background: rgba(222,255,154,0.2); border-color: #deff9a; }
     </style>
 </head>
 <body>
 
-<div class="ui">Спроби: <span id="deaths">0</span></div>
+<div class="ui">Рівень: <span id="lvl-num">1</span> | Смертей: <span id="deaths">0</span></div>
 
 <div class="controls">
     <div class="btn" id="btn-left">←</div>
@@ -32,36 +31,69 @@ const ctx = canvas.getContext('2d');
 let W = canvas.width = window.innerWidth;
 let H = canvas.height = window.innerHeight;
 
-let deaths = 0;
-let player = { x: 50, y: 300, vx: 0, vy: 0, w: 30, h: 30, speed: 0.8, friction: 0.85, jump: -15, gravity: 0.8, onGround: false };
-let keys = { left: false, right: false };
+let currentLevel = 0;
+let deathCount = 0;
 
-// Рівень: x, y, ширина, висота, тип (0 - блок, 1 - шипи, 2 - фініш)
-const level = [
-    {x: 0, y: 400, w: 200, h: 50, type: 0},
-    {x: 250, y: 350, w: 100, h: 20, type: 0},
-    {x: 400, y: 350, w: 150, h: 20, type: 1}, // ШИПИ
-    {x: 600, y: 300, w: 100, h: 20, type: 0},
-    {x: 750, y: 250, w: 100, h: 20, type: 0},
-    {x: 900, y: 400, w: 200, h: 20, type: 1}, // ШИПИ
-    {x: 1150, y: 350, w: 100, h: 20, type: 0},
-    {x: 1300, y: 200, w: 50, h: 20, type: 2}, // ФІНІШ
+// Параметри гравця
+let player = { 
+    x: 100, y: 0, vx: 0, vy: 0, 
+    w: 32, h: 42, 
+    speed: 0.9, friction: 0.86, jump: -16, gravity: 0.8, 
+    onGround: false, anim: 0 
+};
+
+// Типи блоків: 0-платформа, 1-шипи, 2-фініш, 3-батут, 4-рухома
+const levels = [
+    // Рівень 1: Навчання
+    [
+        {x: 0, y: 500, w: 400, h: 40, t: 0},
+        {x: 450, y: 450, w: 150, h: 30, t: 0},
+        {x: 650, y: 450, w: 150, h: 20, t: 1}, // шипи
+        {x: 850, y: 400, w: 100, h: 30, t: 0},
+        {x: 1000, y: 300, w: 60, h: 20, t: 2}  // фініш
+    ],
+    // Рівень 2: Батути та рух
+    [
+        {x: 0, y: 500, w: 200, h: 40, t: 0},
+        {x: 250, y: 500, w: 60, h: 20, t: 3}, // батут
+        {x: 400, y: 300, w: 120, h: 30, t: 4, range: 150, startX: 400}, // рухома
+        {x: 700, y: 250, w: 100, h: 20, t: 1},
+        {x: 850, y: 200, w: 80, h: 30, t: 0},
+        {x: 1000, y: 200, w: 50, h: 10, t: 2}
+    ]
 ];
 
+let keys = { left: false, right: false };
+let camX = 0;
+
 // Керування
-const setup = (id, k) => {
+const setupBtn = (id, k) => {
     const el = document.getElementById(id);
-    el.ontouchstart = (e) => { e.preventDefault(); if(k) keys[k] = true; else if(player.onGround) player.vy = player.jump; };
+    el.ontouchstart = (e) => { 
+        e.preventDefault(); 
+        if(k) keys[k] = true; 
+        else if(player.onGround) player.vy = player.jump; 
+    };
     el.ontouchend = () => { if(k) keys[k] = false; };
 };
-setup('btn-left', 'left');
-setup('btn-right', 'right');
-setup('btn-jump', null);
+setupBtn('btn-left', 'left');
+setupBtn('btn-right', 'right');
+setupBtn('btn-jump', null);
 
-function reset() {
-    player.x = 50; player.y = 300; player.vx = 0; player.vy = 0;
-    deaths++;
-    document.getElementById('deaths').innerText = deaths;
+function reset(next = false) {
+    if(next) {
+        currentLevel++;
+        if(currentLevel >= levels.length) {
+            alert("ЛЕГЕНДА! ТИ ПРОЙШОВ УСЮ ГРУ!");
+            currentLevel = 0;
+            deathCount = 0;
+        }
+    } else {
+        deathCount++;
+    }
+    player.x = 100; player.y = 0; player.vx = 0; player.vy = 0;
+    document.getElementById('lvl-num').innerText = currentLevel + 1;
+    document.getElementById('deaths').innerText = deathCount;
 }
 
 function update() {
@@ -70,70 +102,95 @@ function update() {
     
     player.vx *= player.friction;
     player.vy += player.gravity;
-    
     player.x += player.vx;
     player.y += player.vy;
     player.onGround = false;
 
-    // Перевірка зіткнень
-    level.forEach(p => {
-        if (player.x < p.x + p.w && player.x + player.w > p.x &&
-            player.y < p.y + p.h && player.y + player.h > p.y) {
+    // Обробка об'єктів
+    let currentLvlData = levels[currentLevel];
+    currentLvlData.forEach(p => {
+        // Рух платформ (тип 4)
+        if(p.t === 4) {
+            p.x = p.startX + Math.sin(Date.now() / 500) * p.range;
+        }
+
+        // Колізія
+        if (player.x + player.w > p.x && player.x < p.x + p.w &&
+            player.y + player.h > p.y && player.y < p.y + p.h) {
             
-            if (p.type === 1) reset(); // Смерть на шипах
-            if (p.type === 2) { alert("ПЕРЕМОГА!"); reset(); deaths = 0; } // Фініш
+            if (p.t === 1) reset(); // Шипи
+            if (p.t === 2) reset(true); // Фініш
             
-            // Колізія зверху
             if (player.vy > 0 && player.y + player.h - player.vy <= p.y) {
                 player.y = p.y - player.h;
-                player.vy = 0;
+                if (p.t === 3) player.vy = player.jump * 1.5; // Батут
+                else player.vy = 0;
                 player.onGround = true;
             }
         }
     });
 
-    if (player.y > H) reset(); // Впав у безодню
+    if (player.y > H) reset();
+    camX += (player.x - camX - W/3) * 0.1;
 }
 
 function draw() {
     update();
     ctx.clearRect(0, 0, W, H);
+    
+    // Фон-градієнт
+    let grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#1a1a2e');
+    grad.addColorStop(1, '#16213e');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
 
-    // Камера за гравцем (тільки по X)
-    let camX = player.x - W/4;
     ctx.save();
     ctx.translate(-camX, 0);
 
-    level.forEach(p => {
-        if (p.type === 0) ctx.fillStyle = "#fff";
-        if (p.type === 1) ctx.fillStyle = "#ff4d4d"; // Шипи
-        if (p.type === 2) ctx.fillStyle = "#00ff00"; // Фініш
+    levels[currentLevel].forEach(p => {
+        ctx.shadowBlur = 10;
+        if(p.t === 0 || p.t === 4) ctx.fillStyle = "#e94560"; // Платформа
+        if(p.t === 1) ctx.fillStyle = "#ff0000"; // Шипи
+        if(p.t === 2) ctx.fillStyle = "#deff9a"; // Фініш
+        if(p.t === 3) ctx.fillStyle = "#fdbb2d"; // Батут
         
+        ctx.shadowColor = ctx.fillStyle;
         ctx.fillRect(p.x, p.y, p.w, p.h);
         
-        // Малюємо "зуби" для шипів
-        if (p.type === 1) {
+        // Малюємо шипи детальніше
+        if(p.t === 1) {
             ctx.fillStyle = "#fff";
-            for(let i=0; i<p.w; i+=10) {
+            for(let i=0; i<p.w; i+=15) {
                 ctx.beginPath();
-                ctx.moveTo(p.x + i, p.y);
-                ctx.lineTo(p.x + i + 5, p.y - 10);
-                ctx.lineTo(p.x + i + 10, p.y);
+                ctx.moveTo(p.x+i, p.y);
+                ctx.lineTo(p.x+i+7, p.y-10);
+                ctx.lineTo(p.x+i+15, p.y);
                 ctx.fill();
             }
         }
     });
 
-    // Гравець
-    ctx.fillStyle = "#fdbb2d";
-    ctx.fillRect(player.x, player.y, player.w, player.h);
-    ctx.strokeStyle = "#fff";
-    ctx.strokeRect(player.x, player.y, player.w, player.h);
+    // Малюємо гравця з анімацією
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "#deff9a";
+    ctx.fillStyle = "#deff9a";
+    
+    // Ефект Squash and Stretch
+    let stretchH = player.h;
+    let stretchW = player.w;
+    if(!player.onGround) {
+        stretchH += Math.abs(player.vy);
+        stretchW -= Math.abs(player.vy) / 2;
+    }
+
+    ctx.fillRect(player.x + (player.w - stretchW)/2, player.y + (player.h - stretchH), stretchW, stretchH);
 
     ctx.restore();
     requestAnimationFrame(draw);
 }
 
+window.onresize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
 draw();
 </script>
 </body>
