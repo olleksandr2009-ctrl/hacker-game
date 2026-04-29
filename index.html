@@ -3,217 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>Agro Hunter: Cyber Edition</title>
+    <title>AgroCraft: Multiplayer</title>
     <style>
-        :root { --neon: #00ff41; --danger: #ff003c; --gold: #f1c40f; }
-        body { margin: 0; background: #0a0a0a; color: white; font-family: 'Courier New', monospace; overflow: hidden; touch-action: none; }
-        canvas { display: block; background: #0f172a; }
+        body { margin: 0; background: #87ceeb; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none; }
+        canvas { display: block; image-rendering: pixelated; }
 
-        /* МЕНЮ */
-        #ui-overlay { position: fixed; inset: 0; display: flex; flex-direction: column; z-index: 100; }
-        .menu-screen { flex: 1; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .hidden { display: none !important; }
-
-        .btn-start { background: var(--neon); color: black; padding: 20px 50px; border: none; border-radius: 5px; font-weight: bold; font-size: 24px; cursor: pointer; box-shadow: 0 0 20px var(--neon); }
-        .stats-hud { position: fixed; top: 10px; left: 10px; pointer-events: none; }
+        /* UI ЕЛЕМЕНТИ */
+        .hud { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; }
         
-        /* ГАРМАТА ТА КЕРУВАННЯ */
-        .joy-zone { position: fixed; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border: 2px solid var(--neon); border-radius: 50%; }
-        .joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: var(--neon); opacity: 0.3; border-radius: 50%; }
+        .chat-box { position: fixed; bottom: 80px; left: 10px; width: 250px; height: 150px; background: rgba(0,0,0,0.3); overflow-y: auto; display: flex; flex-direction: column-reverse; padding: 5px; font-size: 12px; }
+        
+        .inventory { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: #333; padding: 5px; border: 3px solid #000; }
+        .slot { width: 45px; height: 45px; background: #8b8b8b; border: 4px solid #555; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
+        .slot.active { border-color: #fff; background: #aaa; }
+
+        #chat-input { position: fixed; bottom: 235px; left: 10px; background: rgba(0,0,0,0.6); border: 1px solid #555; color: white; padding: 5px; width: 240px; display: none; }
     </style>
 </head>
-<body>
+<body onload="init()">
 
-<div id="ui-overlay">
-    <div id="start-menu" class="menu-screen">
-        <h1 style="color:var(--neon); font-size: 40px;">AGRO HUNTER</h1>
-        <p>Персонаж: <span style="font-size: 50px;">🍉</span><br><b>КІБЕР-КАВУН</b></p>
-        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 20px;">
-            <p>🎯 Зброя: Лазерна кісточка</p>
-            <p>🛡️ Броня: Шкірка титану</p>
-        </div>
-        <button class="btn-start" onclick="startGame()">ПОЧАТИ БІЙ</button>
-    </div>
-
-    <div id="game-hud" class="stats-hud hidden">
-        <div style="font-size: 20px;">🔋 ENERGY: <span id="hp-val">100</span>%</div>
-        <div style="color: var(--gold)">💎 CRYSTALS: <span id="score-val">0</span></div>
-    </div>
+<div class="hud">
+    <div>💎 Алмази: <span id="diamonds">0</span></div>
+    <div>📍 Координати: <span id="coords">0,0</span></div>
+    <div style="color: #0f0">● Онлайн: 1</div>
 </div>
 
-<div id="joy-zone" class="joy-zone hidden"><div id="joy-stick" class="joy-stick"></div></div>
-<canvas id="gameCanvas"></canvas>
+<input type="text" id="chat-input" placeholder="Напиши повідомлення...">
+
+<div class="chat-box" id="chat-box">
+    <div><i>Система: Ласкаво просимо в AgroCraft! Натисни 'T' щоб писати.</i></div>
+</div>
+
+<div class="inventory">
+    <div class="slot active" onclick="sel(1, this)">🟫</div> <div class="slot" onclick="sel(2, this)">🧱</div> <div class="slot" onclick="sel(3, this)">🌿</div> <div class="slot" onclick="sel(4, this)">📦</div> <div class="slot" onclick="sel(5, this)">💎</div> </div>
+
+<canvas id="game"></canvas>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
+const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 let W = canvas.width = window.innerWidth;
 let H = canvas.height = window.innerHeight;
 
-let gameRunning = false;
-let score = 0;
+const TILE = 40;
+let world = {};
+let player = { x: 100, y: 100, targetX: 100, targetY: 100, speed: 4, block: 1 };
+let cam = { x: 0, y: 0 };
+let mouse = { x: 0, y: 0 };
 
-// ГІГАНТСЬКА КАРТА (3000 x 3000 пікселів)
-const world = { w: 3000, h: 3000 };
-let camera = { x: 0, y: 0 };
-
-// Об'єкти
-let player = { x: 1500, y: 1500, r: 25, hp: 100, speed: 5, angle: 0 };
-let obstacles = []; // Камінці
-let bushes = []; // Трава
-let enemies = [];
-let bullets = [];
-
-// Створення ландшафту (рандомні камінці та трава)
-function generateWorld() {
-    for(let i=0; i<100; i++) {
-        obstacles.push({ x: Math.random()*world.w, y: Math.random()*world.h, r: 30 + Math.random()*40 });
-        bushes.push({ x: Math.random()*world.w, y: Math.random()*world.h, r: 60 });
+// Генерація світу
+function init() {
+    for(let i = -20; i < 20; i++) {
+        for(let j = 5; j < 15; j++) {
+            world[`${i},${j}`] = (j === 5) ? 3 : 1;
+        }
     }
-}
-
-function startGame() {
-    document.getElementById('start-menu').classList.add('hidden');
-    document.getElementById('game-hud').classList.remove('hidden');
-    document.getElementById('joy-zone').classList.remove('hidden');
-    generateWorld();
-    gameRunning = true;
-    spawnEnemies();
     loop();
 }
 
-function spawnEnemies() {
-    if(!gameRunning) return;
-    if(enemies.length < 15) {
-        enemies.push({
-            x: player.x + (Math.random() > 0.5 ? 500 : -500),
-            y: player.y + (Math.random() > 0.5 ? 500 : -500),
-            hp: 3, r: 22, speed: 2 + Math.random()*2
-        });
-    }
-    setTimeout(spawnEnemies, 3000);
-}
-
-// Керування
-let joy = { x: 0, y: 0, active: false };
-const jZone = document.getElementById('joy-zone');
-const jStick = document.getElementById('joy-stick');
-
-window.addEventListener('touchstart', e => { 
-    if(e.target.id === 'gameCanvas') shoot(e.touches[0]); 
-});
-
-jZone.addEventListener('touchstart', () => joy.active = true);
-window.addEventListener('touchmove', e => {
-    if(!joy.active) return;
-    let rect = jZone.getBoundingClientRect();
-    let t = e.touches[0];
-    let dx = t.clientX - (rect.left + 60);
-    let dy = t.clientY - (rect.top + 60);
-    let d = Math.sqrt(dx*dx + dy*dy);
-    if(d > 50) { dx *= 50/d; dy *= 50/d; }
-    jStick.style.transform = `translate(${dx}px, ${dy}px)`;
-    joy.x = dx/50; joy.y = dy/50;
-});
-window.addEventListener('touchend', () => { 
-    joy.active = false; joy.x = 0; joy.y = 0; 
-    jStick.style.transform = `translate(0,0)`;
-});
-
-function shoot(t) {
-    let tx = t.clientX + camera.x;
-    let ty = t.clientY + camera.y;
-    let a = Math.atan2(ty - player.y, tx - player.x);
-    bullets.push({ x: player.x, y: player.y, vx: Math.cos(a)*15, vy: Math.sin(a)*15 });
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
 }
 
 function update() {
-    // Рух гравця
-    let nx = player.x + joy.x * player.speed;
-    let ny = player.y + joy.y * player.speed;
-    
-    // Перевірка камінців (колізія)
-    let collision = false;
-    obstacles.forEach(o => {
-        if(Math.hypot(nx - o.x, ny - o.y) < player.r + o.r) collision = true;
-    });
-    if(!collision) { player.x = nx; player.y = ny; }
+    // Камера плавно слідує за гравцем
+    cam.x += (player.x - cam.x - W/2) * 0.1;
+    cam.y += (player.y - cam.y - H/2) * 0.1;
 
-    // Камера
-    camera.x = player.x - W/2;
-    camera.y = player.y - H/2;
+    // Рух (WASD)
+    if (keys['w']) player.y -= player.speed;
+    if (keys['s']) player.y += player.speed;
+    if (keys['a']) player.x -= player.speed;
+    if (keys['d']) player.x += player.speed;
 
-    // Вороги (Розумний AI)
-    enemies.forEach((en, i) => {
-        let dist = Math.hypot(player.x - en.x, player.y - en.y);
-        let inBush = false;
-        bushes.forEach(b => { if(Math.hypot(player.x-b.x, player.y-b.y) < b.r) inBush = true; });
-
-        if(!inBush || dist < 150) {
-            let a = Math.atan2(player.y - en.y, player.x - en.x);
-            en.x += Math.cos(a) * en.speed;
-            en.y += Math.sin(a) * en.speed;
-        }
-
-        if(dist < player.r + en.r) { player.hp -= 0.2; }
-    });
-
-    // Кулі
-    bullets.forEach((b, i) => {
-        b.x += b.vx; b.y += b.vy;
-        enemies.forEach((en, ei) => {
-            if(Math.hypot(b.x-en.x, b.y-en.y) < en.r) {
-                en.hp--; bullets.splice(i, 1);
-                if(en.hp<=0) { enemies.splice(ei, 1); score += 10; }
-            }
-        });
-        obstacles.forEach(o => {
-            if(Math.hypot(b.x-o.x, b.y-o.y) < o.r) bullets.splice(i, 1);
-        });
-    });
-
-    document.getElementById('hp-val').innerText = Math.max(0, Math.floor(player.hp));
-    document.getElementById('score-val').innerText = score;
-    if(player.hp <= 0) location.reload();
+    document.getElementById('coords').innerText = `${Math.floor(player.x/TILE)}, ${Math.floor(player.y/TILE)}`;
 }
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
     ctx.save();
-    ctx.translate(-camera.x, -camera.y);
+    ctx.translate(-cam.x, -cam.y);
 
-    // Трава
-    ctx.fillStyle = '#1e293b';
-    bushes.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); });
+    // Малюємо блоки
+    for(let key in world) {
+        let [x, y] = key.split(',').map(Number);
+        let tx = x * TILE;
+        let ty = y * TILE;
+        
+        // Малюємо тільки те, що в кадрі
+        if (tx > cam.x - TILE && tx < cam.x + W && ty > cam.y - TILE && ty < cam.y + H) {
+            ctx.fillStyle = getBlockColor(world[key]);
+            ctx.fillRect(tx, ty, TILE, TILE);
+            ctx.strokeStyle = "rgba(0,0,0,0.1)";
+            ctx.strokeRect(tx, ty, TILE, TILE);
+        }
+    }
 
-    // Камінці
-    ctx.fillStyle = '#475569';
-    obstacles.forEach(o => { ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 7); ctx.fill(); });
-
-    // Вороги
-    ctx.font = "30px Arial";
-    enemies.forEach(en => { ctx.fillText("👾", en.x-15, en.y+10); });
-
-    // Гравець (Cyber Watermelon)
-    ctx.font = "40px Arial";
-    ctx.fillText("🍉", player.x-20, player.y+15);
-    // Шолом
-    ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(player.x, player.y-5, 25, 3.1, 0); ctx.stroke();
-
-    // Кулі
-    ctx.fillStyle = '#ff003c';
-    bullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, 7); ctx.fill(); });
+    // Персонаж (Стів)
+    ctx.fillStyle = "#e0ac69"; // Шкіра
+    ctx.fillRect(player.x - 10, player.y - 30, 20, 20); // Голова
+    ctx.fillStyle = "#00a"; // Сорочка
+    ctx.fillRect(player.x - 12, player.y - 10, 24, 25); // Тулуб
+    ctx.fillStyle = "#222"; // Штани
+    ctx.fillRect(player.x - 10, player.y + 15, 20, 15); // Ноги
 
     ctx.restore();
 }
 
-function loop() {
-    if(!gameRunning) return;
-    update();
-    draw();
-    requestAnimationFrame(loop);
+function getBlockColor(t) {
+    return {1:'#5d4037', 2:'#7f8c8d', 3:'#2ecc71', 4:'#a67c52', 5:'#00d2ff'}[t];
 }
+
+// Взаємодія
+let keys = {};
+window.onkeydown = e => { 
+    keys[e.key.toLowerCase()] = true; 
+    if(e.key === 't') {
+        let input = document.getElementById('chat-input');
+        input.style.display = 'block';
+        input.focus();
+    }
+};
+window.onkeyup = e => keys[e.key.toLowerCase()] = false;
+
+// Будування/Руйнування
+canvas.onmousedown = e => {
+    let gx = Math.floor((e.clientX + cam.x) / TILE);
+    let gy = Math.floor((e.clientY + cam.y) / TILE);
+    
+    if (e.button === 0) { // Ліва кнопка - ставити
+        world[`${gx},${gy}`] = player.block;
+    } else { // Права кнопка - ламати
+        delete world[`${gx},${gy}`];
+    }
+};
+canvas.oncontextmenu = e => e.preventDefault();
+
+// Вибір блоку
+function sel(id, el) {
+    player.block = id;
+    document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+}
+
+// Чат
+document.getElementById('chat-input').onkeydown = e => {
+    if(e.key === 'Enter') {
+        let text = e.target.value;
+        if(text) {
+            let chat = document.getElementById('chat-box');
+            let msg = document.createElement('div');
+            msg.innerHTML = `<b>Ти:</b> ${text}`;
+            chat.prepend(msg);
+            e.target.value = '';
+        }
+        e.target.style.display = 'none';
+        canvas.focus();
+    }
+};
+
 </script>
 </body>
 </html>
