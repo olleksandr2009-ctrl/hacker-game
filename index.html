@@ -3,39 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>AgroCraft: Multiplayer</title>
+    <title>AgroCraft: Mobile & PC</title>
     <style>
-        body { margin: 0; background: #87ceeb; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none; }
-        canvas { display: block; image-rendering: pixelated; }
+        body { margin: 0; background: #87ceeb; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        canvas { display: block; }
 
-        /* UI ЕЛЕМЕНТИ */
-        .hud { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; }
-        
-        .chat-box { position: fixed; bottom: 80px; left: 10px; width: 250px; height: 150px; background: rgba(0,0,0,0.3); overflow-y: auto; display: flex; flex-direction: column-reverse; padding: 5px; font-size: 12px; }
-        
-        .inventory { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: #333; padding: 5px; border: 3px solid #000; }
-        .slot { width: 45px; height: 45px; background: #8b8b8b; border: 4px solid #555; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
+        /* Джойстик для мобільних */
+        .joystick-zone { position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.2); border-radius: 50%; z-index: 10; }
+        .joystick-stick { position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: #fff; border-radius: 50%; opacity: 0.5; }
+
+        /* Інвентар */
+        .inventory { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; }
+        .slot { width: 40px; height: 40px; background: #8b8b8b; border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
         .slot.active { border-color: #fff; background: #aaa; }
 
-        #chat-input { position: fixed; bottom: 235px; left: 10px; background: rgba(0,0,0,0.6); border: 1px solid #555; color: white; padding: 5px; width: 240px; display: none; }
+        .hud { position: fixed; top: 10px; left: 10px; pointer-events: none; background: rgba(0,0,0,0.3); padding: 5px; }
     </style>
 </head>
-<body onload="init()">
+<body>
 
-<div class="hud">
-    <div>💎 Алмази: <span id="diamonds">0</span></div>
-    <div>📍 Координати: <span id="coords">0,0</span></div>
-    <div style="color: #0f0">● Онлайн: 1</div>
-</div>
+<div class="hud">Керування: WASD або Джойстик<br>ЛКМ - Ставити, ПКМ - Ламати</div>
 
-<input type="text" id="chat-input" placeholder="Напиши повідомлення...">
-
-<div class="chat-box" id="chat-box">
-    <div><i>Система: Ласкаво просимо в AgroCraft! Натисни 'T' щоб писати.</i></div>
+<div class="joystick-zone" id="joy-zone">
+    <div class="joystick-stick" id="joy-stick"></div>
 </div>
 
 <div class="inventory">
-    <div class="slot active" onclick="sel(1, this)">🟫</div> <div class="slot" onclick="sel(2, this)">🧱</div> <div class="slot" onclick="sel(3, this)">🌿</div> <div class="slot" onclick="sel(4, this)">📦</div> <div class="slot" onclick="sel(5, this)">💎</div> </div>
+    <div class="slot active" onclick="sel(1, this)">🟫</div>
+    <div class="slot" onclick="sel(2, this)">🧱</div>
+    <div class="slot" onclick="sel(3, this)">🌿</div>
+    <div class="slot" onclick="sel(4, this)">💎</div>
+</div>
 
 <canvas id="game"></canvas>
 
@@ -47,38 +45,32 @@ let H = canvas.height = window.innerHeight;
 
 const TILE = 40;
 let world = {};
-let player = { x: 100, y: 100, targetX: 100, targetY: 100, speed: 4, block: 1 };
+let player = { x: 0, y: 0, speed: 4, block: 1 };
 let cam = { x: 0, y: 0 };
-let mouse = { x: 0, y: 0 };
+let keys = {};
+let joy = { dx: 0, dy: 0, active: false };
 
-// Генерація світу
-function init() {
-    for(let i = -20; i < 20; i++) {
-        for(let j = 5; j < 15; j++) {
-            world[`${i},${j}`] = (j === 5) ? 3 : 1;
-        }
+// Початковий світ
+for(let x = -10; x < 10; x++) {
+    for(let y = 2; y < 6; y++) {
+        world[`${x},${y}`] = (y === 2) ? 3 : 1;
     }
-    loop();
-}
-
-function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
 }
 
 function update() {
-    // Камера плавно слідує за гравцем
+    // Рух клавіатурою
+    if (keys['w'] || keys['ц']) player.y -= player.speed;
+    if (keys['s'] || keys['і']) player.y += player.speed;
+    if (keys['a'] || keys['ф']) player.x -= player.speed;
+    if (keys['d'] || keys['в']) player.x += player.speed;
+
+    // Рух джойстиком
+    player.x += joy.dx * player.speed;
+    player.y += joy.dy * player.speed;
+
+    // Слідування камери
     cam.x += (player.x - cam.x - W/2) * 0.1;
     cam.y += (player.y - cam.y - H/2) * 0.1;
-
-    // Рух (WASD)
-    if (keys['w']) player.y -= player.speed;
-    if (keys['s']) player.y += player.speed;
-    if (keys['a']) player.x -= player.speed;
-    if (keys['d']) player.x += player.speed;
-
-    document.getElementById('coords').innerText = `${Math.floor(player.x/TILE)}, ${Math.floor(player.y/TILE)}`;
 }
 
 function draw() {
@@ -86,84 +78,69 @@ function draw() {
     ctx.save();
     ctx.translate(-cam.x, -cam.y);
 
-    // Малюємо блоки
+    // Блоки
     for(let key in world) {
         let [x, y] = key.split(',').map(Number);
-        let tx = x * TILE;
-        let ty = y * TILE;
-        
-        // Малюємо тільки те, що в кадрі
-        if (tx > cam.x - TILE && tx < cam.x + W && ty > cam.y - TILE && ty < cam.y + H) {
-            ctx.fillStyle = getBlockColor(world[key]);
-            ctx.fillRect(tx, ty, TILE, TILE);
-            ctx.strokeStyle = "rgba(0,0,0,0.1)";
-            ctx.strokeRect(tx, ty, TILE, TILE);
-        }
+        ctx.fillStyle = {1:'#5d4037', 2:'#7f8c8d', 3:'#2ecc71', 4:'#00d2ff'}[world[key]];
+        ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+        ctx.strokeStyle = "rgba(0,0,0,0.1)";
+        ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
     }
 
-    // Персонаж (Стів)
-    ctx.fillStyle = "#e0ac69"; // Шкіра
-    ctx.fillRect(player.x - 10, player.y - 30, 20, 20); // Голова
-    ctx.fillStyle = "#00a"; // Сорочка
-    ctx.fillRect(player.x - 12, player.y - 10, 24, 25); // Тулуб
-    ctx.fillStyle = "#222"; // Штани
-    ctx.fillRect(player.x - 10, player.y + 15, 20, 15); // Ноги
+    // Персонаж
+    ctx.fillStyle = "#e0ac69"; 
+    ctx.fillRect(player.x - 15, player.y - 40, 30, 30); // Голова
+    ctx.fillStyle = "#00f"; 
+    ctx.fillRect(player.x - 15, player.y - 10, 30, 40); // Тіло
 
     ctx.restore();
+    update();
+    requestAnimationFrame(draw);
 }
 
-function getBlockColor(t) {
-    return {1:'#5d4037', 2:'#7f8c8d', 3:'#2ecc71', 4:'#a67c52', 5:'#00d2ff'}[t];
-}
+// Події клавіатури
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-// Взаємодія
-let keys = {};
-window.onkeydown = e => { 
-    keys[e.key.toLowerCase()] = true; 
-    if(e.key === 't') {
-        let input = document.getElementById('chat-input');
-        input.style.display = 'block';
-        input.focus();
-    }
-};
-window.onkeyup = e => keys[e.key.toLowerCase()] = false;
-
-// Будування/Руйнування
+// Будування
 canvas.onmousedown = e => {
     let gx = Math.floor((e.clientX + cam.x) / TILE);
     let gy = Math.floor((e.clientY + cam.y) / TILE);
-    
-    if (e.button === 0) { // Ліва кнопка - ставити
-        world[`${gx},${gy}`] = player.block;
-    } else { // Права кнопка - ламати
-        delete world[`${gx},${gy}`];
-    }
+    if(e.button === 0) world[`${gx},${gy}`] = player.block;
+    else delete world[`${gx},${gy}`];
 };
 canvas.oncontextmenu = e => e.preventDefault();
 
-// Вибір блоку
+// Логіка джойстика
+const joyZone = document.getElementById('joy-zone');
+const joyStick = document.getElementById('joy-stick');
+
+joyZone.ontouchstart = () => joy.active = true;
+window.ontouchmove = e => {
+    if(!joy.active) return;
+    let rect = joyZone.getBoundingClientRect();
+    let touch = e.touches[0];
+    let x = touch.clientX - (rect.left + 50);
+    let y = touch.clientY - (rect.top + 50);
+    let dist = Math.sqrt(x*x + y*y);
+    let max = 40;
+    if(dist > max) { x *= max/dist; y *= max/dist; }
+    joyStick.style.transform = `translate(${x}px, ${y}px)`;
+    joy.dx = x/max; joy.dy = y/max;
+};
+window.ontouchend = () => {
+    joy.active = false; joy.dx = 0; joy.dy = 0;
+    joyStick.style.transform = `translate(0, 0)`;
+};
+
 function sel(id, el) {
     player.block = id;
     document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
     el.classList.add('active');
 }
 
-// Чат
-document.getElementById('chat-input').onkeydown = e => {
-    if(e.key === 'Enter') {
-        let text = e.target.value;
-        if(text) {
-            let chat = document.getElementById('chat-box');
-            let msg = document.createElement('div');
-            msg.innerHTML = `<b>Ти:</b> ${text}`;
-            chat.prepend(msg);
-            e.target.value = '';
-        }
-        e.target.style.display = 'none';
-        canvas.focus();
-    }
-};
-
+draw();
 </script>
 </body>
 </html>
+
