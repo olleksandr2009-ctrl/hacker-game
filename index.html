@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>Mine Stars: Inventory Edition</title>
+    <title>Mine Stars: Ultimate Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root{--bg:#0f0c29;--card:rgba(22, 33, 62, 0.9);--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#3d2b1f;--red:#e74c3c;}
@@ -13,7 +13,8 @@
         .stats-line{display:flex;justify-content:space-between;align-items:center;}
         
         .screen{display:none;height:78vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:120px;}
-        .active-screen{display:block;}
+        .active-screen{display:block;animation:fadeIn 0.3s;}
+        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 
         .farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
         .slot{height:140px;background:var(--dirt);border:3px solid #5d4037;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 6px 0 #2a1d15;}
@@ -21,35 +22,35 @@
         .card{background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;}
         .m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:10px 15px;border-radius:10px;font-weight:bold;cursor:pointer;}
         .btn-real{background:var(--green);color:white;}
-        .btn-use{background:var(--accent);color:black;padding:5px 10px;font-size:12px;}
+        .btn-use{background:var(--accent);color:black;padding:8px 12px;font-size:12px;border-radius:8px;border:none;font-weight:bold;}
 
         .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:12px 0;border-top:2px solid #0f3460;z-index:100;}
         .nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:10px;}
         .nav-btn.active{color:var(--accent);}
 
-        #seed-selector, #inventory-modal{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:90%;background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:15px;z-index:1000;}
-        .badge-real{background:var(--green);font-size:9px;padding:2px 5px;border-radius:4px;margin-left:5px;}
+        #seed-selector, #inventory-modal{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:90%;background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:15px;z-index:1000;box-shadow:0 0 20px rgba(0,0,0,0.5);}
+        .badge-real{background:var(--green);font-size:9px;padding:2px 5px;border-radius:4px;margin-left:5px;vertical-align:middle;}
     </style>
 </head>
 <body onload="init()">
 
-<div id="seed-selector">
-    <h4 style="text-align:center;margin-top:0">🧺 ПОСАДИТИ (Ігрова валюта)</h4>
-    <div id="seed-options"></div>
+<div id="inventory-modal">
+    <h4 style="text-align:center;margin-top:0;color:var(--accent)">🎒 ТВІЙ КОШИК</h4>
+    <div id="inventory-list" style="max-height:300px;overflow-y:auto"></div>
     <button class="m-btn" style="width:100%;background:var(--red);color:white;margin-top:10px" onclick="closePopups()">ЗАКРИТИ</button>
 </div>
 
-<div id="inventory-modal">
-    <h4 style="text-align:center;margin-top:0">🎒 ТВІЙ КОШИК</h4>
-    <div id="inventory-list"></div>
+<div id="seed-selector">
+    <h4 style="text-align:center;margin-top:0">🧺 ПОСАДИТИ</h4>
+    <div id="seed-options"></div>
     <button class="m-btn" style="width:100%;background:var(--red);color:white;margin-top:10px" onclick="closePopups()">ЗАКРИТИ</button>
 </div>
 
 <div class="header">
     <div class="stats-line">
-        <div style="color:var(--gold)">⭐ <span id="balance">0.00</span> <small style="font-size:8px">(Ігрова)</small></div>
-        <div style="color:var(--accent);font-weight:bold">LVL: <span id="lvl-badge">1</span></div>
-        <button class="m-btn" style="padding:4px 8px; font-size:10px" onclick="openInventory()">🎒 КОШИК</button>
+        <div><span style="color:var(--gold)">⭐</span> <span id="balance">0.00</span></div>
+        <div style="font-weight:bold;color:var(--accent)">LVL: <span id="lvl-badge">1</span></div>
+        <button class="m-btn" style="padding:5px 10px; font-size:11px" onclick="openInventory()">🎒 КОШИК</button>
     </div>
 </div>
 
@@ -58,24 +59,25 @@
 </div>
 
 <div id="shop-screen" class="screen">
-    <h3 style="color:var(--accent)">🛒 МАГАЗИН <span class="badge-real">ТЕЛЕГРАМ STARS</span></h3>
+    <h3 style="color:var(--accent);margin-bottom:5px">🛒 МАГАЗИН</h3>
+    <p style="font-size:10px;margin-bottom:15px;color:#aaa">Оплата: Telegram Stars (⭐️) — назавжди</p>
     
     <div class="card">
-        <div><b>⛏️ Кирка (НАЗАВЖДИ)</b><br><small>+20% до всього доходу</small></div>
+        <div><b>⛏️ Кирка (НАЗАВЖДИ)</b><br><small>+20% до врожаю</small></div>
         <button class="m-btn btn-real" onclick="exitToBot('buy_pickaxe')">15 ⭐️</button>
     </div>
     <div class="card">
-        <div><b>🌱 Грядка (НАЗАВЖДИ)</b><br><small>+1 слот на полі</small></div>
+        <div><b>🌱 Грядка (НАЗАВЖДИ)</b><br><small>+1 місце на полі</small></div>
         <button class="m-btn btn-real" onclick="exitToBot('buy_new_plot')">10 ⭐️</button>
     </div>
 
-    <h4 style="color:var(--gold);margin-top:20px">📦 ВІДКРИТТЯ НАСІННЯ (НАЗАВЖДИ)</h4>
+    <h4 style="color:var(--gold);margin-top:20px">📦 НАСІННЯ (НАЗАВЖДИ)</h4>
     <div id="seeds-shop"></div>
 </div>
 
 <div class="footer">
     <button class="nav-btn active" onclick="show('map',this)">🚜 ФЕРМА</button>
-    <button class="nav-btn" onclick="show('shop',this)">🛒 ШОП</button>
+    <button class="nav-btn" onclick="show('shop',this)">🛒 МАГАЗИН</button>
     <button class="nav-btn" onclick="openInventory()">🎒 КОШИК</button>
 </div>
 
@@ -85,7 +87,7 @@ let selectedSlot = null;
 let user = { 
     balance: 0.1, level: 1, pickaxe: false, plots: 2, map: {}, 
     unlockedLevels: [1, 2, 3],
-    inventory: [] // Тут лежать куплені, але не примінені предмети
+    inventory: [] 
 };
 
 const config = [
@@ -101,11 +103,8 @@ const config = [
 
 function init() {
     tg.expand();
-    let saved = localStorage.getItem('mine_stars_ultimate_v1');
+    let saved = localStorage.getItem('mine_stars_pro_v5');
     if(saved) user = JSON.parse(saved);
-    
-    // Перевірка, чи ми повернулися від бота з покупкою (імітація для тесту)
-    // В реальності бот має оновити дані через бекенд, але ми додамо перевірку URL-параметрів якщо треба
     
     updateUI(); renderMap(); renderShop();
     setInterval(() => { renderMap(); updateUI(); save(); }, 1000);
@@ -124,7 +123,7 @@ function renderMap() {
             let obj = user.map[i] || {status:'empty'};
             d.className = 'slot';
             if(obj.status === 'empty') {
-                d.innerHTML = "🟫"; d.onclick = () => openSeedSelector(i);
+                d.innerHTML = "<span style='font-size:30px'>🟫</span>"; d.onclick = () => openSeedSelector(i);
             } else {
                 let left = Math.ceil((obj.finish - Date.now())/1000);
                 if(left <= 0) {
@@ -132,7 +131,7 @@ function renderMap() {
                     d.onclick = () => collect(i);
                 } else {
                     let h = Math.floor(left/3600); let m = Math.floor((left%3600)/60);
-                    d.innerHTML = `<span style="font-size:40px;opacity:0.5">${obj.emoji}</span><br><small>${h}г ${m}м</small>`;
+                    d.innerHTML = `<span style="font-size:40px;opacity:0.4">${obj.emoji}</span><br><small>${h}г ${m}м</small>`;
                 }
             }
         } else { d.className = 'slot'; d.innerHTML = "🔒"; }
@@ -147,14 +146,14 @@ function openSeedSelector(i) {
         let s = config[lvl];
         let price = (s.s * 0.4).toFixed(3);
         list.innerHTML += `<div class="card" onclick="startGrow(${lvl}, ${price})">
-            <span>${s.e} ${s.n}</span> <b>${price} ⭐ (ігрова)</b>
+            <span>${s.e} ${s.n}</span> <b>${price} ⭐</b>
         </div>`;
     });
     document.getElementById('seed-selector').style.display = 'block';
 }
 
 function startGrow(lvl, price) {
-    if(user.balance < price) return tg.showAlert("Недостатньо ігрової валюти!");
+    if(user.balance < price) return tg.showAlert("Недостатньо грошей на насіння!");
     user.balance -= price;
     let s = config[lvl];
     user.map[selectedSlot] = { status:'growing', emoji: s.e, finish: Date.now() + (s.t * 1000), reward: s.s };
@@ -175,8 +174,8 @@ function renderShop() {
         let s = config[i];
         let isBought = user.unlockedLevels.includes(i);
         html += `<div class="card">
-            <div><b>${s.e} Насіння ${s.n}</b><br><small>Назавжди</small></div>
-            <button class="m-btn btn-real" onclick="${isBought?'':`exitToBot('unlock_lvl_${i}')`}">
+            <div><b>${s.e} Насіння ${s.n}</b><br><small>Розблокувати</small></div>
+            <button class="m-btn ${isBought?'btn-use':'btn-real'}" onclick="${isBought?'':`exitToBot('unlock_lvl_${i}')`}">
                 ${isBought ? 'КУПЛЕНО' : s.unlock + ' ⭐️'}
             </button>
         </div>`;
@@ -184,24 +183,33 @@ function renderShop() {
     document.getElementById('seeds-shop').innerHTML = html;
 }
 
-// ФУНКЦІЯ ВИХОДУ ДО БОТА
 function exitToBot(action) {
-    tg.sendData(action); 
-    // Закриваємо Mini App, щоб користувач побачив повідомлення від бота
-    setTimeout(() => { tg.close(); }, 500);
+    // ДЛЯ ТЕСТУ: Відразу додаємо в кошик
+    if(action === 'buy_pickaxe') user.inventory.push('pickaxe');
+    else if(action === 'buy_new_plot') user.inventory.push('plot');
+    else if(action.startsWith('unlock_lvl_')) user.inventory.push(action.replace('buy_',''));
+
+    save();
+    tg.sendData(action);
+    tg.showAlert("Оплачено (Тестовий режим)! Предмет додано у твій кошик 🎒");
+    setTimeout(() => { tg.close(); }, 1500);
 }
 
 function openInventory() {
     let list = document.getElementById('inventory-list');
     list.innerHTML = '';
     if(user.inventory.length === 0) {
-        list.innerHTML = '<center style="padding:20px;opacity:0.5">Кошик порожній. Купіть щось у магазині!</center>';
+        list.innerHTML = '<center style="padding:30px;opacity:0.5">Кошик порожній...</center>';
     }
     user.inventory.forEach((item, index) => {
-        let name = item === 'pickaxe' ? "⛏️ Кирка" : item.startsWith('unlock_') ? "📦 Насіння" : "🌱 Грядка";
+        let name = "Невідомий предмет";
+        if(item === 'pickaxe') name = "⛏️ Кирка (+20%)";
+        else if(item === 'plot') name = "🌱 Нова грядка";
+        else if(item.startsWith('unlock_lvl_')) name = "📦 Насіння " + item.split('_')[2] + " рівня";
+
         list.innerHTML += `<div class="card">
             <span>${name}</span>
-            <button class="m-btn btn-use" onclick="useItem(${index})">ПРИМІНИТИ</button>
+            <button class="btn-use" onclick="useItem(${index})">ПРИМІНИТИ</button>
         </div>`;
     });
     document.getElementById('inventory-modal').style.display = 'block';
@@ -211,20 +219,17 @@ function useItem(index) {
     let item = user.inventory[index];
     if(item === 'pickaxe') {
         user.pickaxe = true;
-        tg.showAlert("Кирка активована! +20% доходу назавжди.");
+        tg.showAlert("Кирка активована назавжди!");
     } else if(item === 'plot') {
         user.plots++;
-        tg.showAlert("Додано нову грядку назавжди!");
-    } else if(item.startsWith('unlock_')) {
-        let lvl = parseInt(item.split('_')[1]);
+        tg.showAlert("Додано нову грядку!");
+    } else if(item.startsWith('unlock_lvl_')) {
+        let lvl = parseInt(item.split('_')[2]);
         if(!user.unlockedLevels.includes(lvl)) user.unlockedLevels.push(lvl);
-        tg.showAlert("Нове насіння розблоковано!");
+        tg.showAlert("Нове насіння доступне!");
     }
-    user.inventory.splice(index, 1); // Видаляємо з кошика
-    closePopups();
-    renderMap();
-    renderShop();
-    save();
+    user.inventory.splice(index, 1);
+    save(); closePopups(); renderMap(); renderShop();
 }
 
 function closePopups() {
@@ -239,9 +244,8 @@ function show(s, b) {
     b.classList.add('active');
 }
 
-function save() { 
-    localStorage.setItem('mine_stars_ultimate_v1', JSON.stringify(user)); 
-}
+function save() { localStorage.setItem('mine_stars_pro_v5', JSON.stringify(user)); }
 </script>
 </body>
-</html>
+            </html>
+                                                                                  
