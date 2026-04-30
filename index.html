@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>Mine Stars: Shop Edition</title>
+    <title>Mine Stars: Inventory Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root{--bg:#0f0c29;--card:rgba(22, 33, 62, 0.9);--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#3d2b1f;--red:#e74c3c;}
@@ -20,29 +20,36 @@
 
         .card{background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;}
         .m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:10px 15px;border-radius:10px;font-weight:bold;cursor:pointer;}
-        .m-btn.real{background:var(--green);color:white;}
-        .m-btn.locked{background:#555;color:#aaa;cursor:not-allowed;}
+        .btn-real{background:var(--green);color:white;}
+        .btn-use{background:var(--accent);color:black;padding:5px 10px;font-size:12px;}
 
         .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:12px 0;border-top:2px solid #0f3460;z-index:100;}
         .nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:10px;}
         .nav-btn.active{color:var(--accent);}
 
-        #seed-selector{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:90%;background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:15px;z-index:1000;}
+        #seed-selector, #inventory-modal{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:90%;background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:15px;z-index:1000;}
+        .badge-real{background:var(--green);font-size:9px;padding:2px 5px;border-radius:4px;margin-left:5px;}
     </style>
 </head>
 <body onload="init()">
 
 <div id="seed-selector">
-    <h4 style="text-align:center;margin-top:0">🧺 ОБЕРИ НАСІННЯ</h4>
+    <h4 style="text-align:center;margin-top:0">🧺 ПОСАДИТИ (Ігрова валюта)</h4>
     <div id="seed-options"></div>
-    <button class="m-btn" style="width:100%;background:var(--red);color:white;margin-top:10px" onclick="document.getElementById('seed-selector').style.display='none'">ЗАКРИТИ</button>
+    <button class="m-btn" style="width:100%;background:var(--red);color:white;margin-top:10px" onclick="closePopups()">ЗАКРИТИ</button>
+</div>
+
+<div id="inventory-modal">
+    <h4 style="text-align:center;margin-top:0">🎒 ТВІЙ КОШИК</h4>
+    <div id="inventory-list"></div>
+    <button class="m-btn" style="width:100%;background:var(--red);color:white;margin-top:10px" onclick="closePopups()">ЗАКРИТИ</button>
 </div>
 
 <div class="header">
     <div class="stats-line">
-        <div style="color:var(--gold)">⭐ <span id="balance">0.00</span></div>
+        <div style="color:var(--gold)">⭐ <span id="balance">0.00</span> <small style="font-size:8px">(Ігрова)</small></div>
         <div style="color:var(--accent);font-weight:bold">LVL: <span id="lvl-badge">1</span></div>
-        <div style="font-size:10px">⛏️ <span id="pick-status">НІ</span></div>
+        <button class="m-btn" style="padding:4px 8px; font-size:10px" onclick="openInventory()">🎒 КОШИК</button>
     </div>
 </div>
 
@@ -51,62 +58,62 @@
 </div>
 
 <div id="shop-screen" class="screen">
-    <h3 style="color:var(--accent)">🛒 МАГАЗИН</h3>
+    <h3 style="color:var(--accent)">🛒 МАГАЗИН <span class="badge-real">ТЕЛЕГРАМ STARS</span></h3>
     
     <div class="card">
-        <div><b>⛏️ Кирка Зірок</b><br><small>+20% до врожаю</small></div>
-        <button class="m-btn real" onclick="payReal('buy_pickaxe')">35 ⭐️</button>
+        <div><b>⛏️ Кирка (НАЗАВЖДИ)</b><br><small>+20% до всього доходу</small></div>
+        <button class="m-btn btn-real" onclick="exitToBot('buy_pickaxe')">15 ⭐️</button>
     </div>
     <div class="card">
-        <div><b>🌱 Нова Грядка</b><br><small>+1 місце на полі</small></div>
-        <button class="m-btn real" onclick="payReal('buy_new_plot')">25 ⭐️</button>
+        <div><b>🌱 Грядка (НАЗАВЖДИ)</b><br><small>+1 слот на полі</small></div>
+        <button class="m-btn btn-real" onclick="exitToBot('buy_new_plot')">10 ⭐️</button>
     </div>
 
-    <h4 style="color:var(--gold);margin-top:20px">📦 ВІДКРИТТЯ НАСІННЯ</h4>
+    <h4 style="color:var(--gold);margin-top:20px">📦 ВІДКРИТТЯ НАСІННЯ (НАЗАВЖДИ)</h4>
     <div id="seeds-shop"></div>
-</div>
-
-<div id="dealer-screen" class="screen">
-    <h3 style="color:var(--green)">💳 ВИВІД</h3>
-    <div class="card">Баланс: <b id="withdraw-bal">0.00</b> ⭐</div>
-    <button class="m-btn real" onclick="payReal('withdraw_request')">ВИВЕСТИ</button>
 </div>
 
 <div class="footer">
     <button class="nav-btn active" onclick="show('map',this)">🚜 ФЕРМА</button>
-    <button class="nav-btn" onclick="show('shop',this)">🛒 МАГАЗИН</button>
-    <button class="nav-btn" onclick="show('dealer',this)">💳 ВИВІД</button>
+    <button class="nav-btn" onclick="show('shop',this)">🛒 ШОП</button>
+    <button class="nav-btn" onclick="openInventory()">🎒 КОШИК</button>
 </div>
 
 <script>
 let tg = window.Telegram.WebApp;
 let selectedSlot = null;
-let user = { balance: 0.1, level: 1, pickaxe: false, plots: 2, map: {}, unlockedLevels: [1, 2, 3] };
+let user = { 
+    balance: 0.1, level: 1, pickaxe: false, plots: 2, map: {}, 
+    unlockedLevels: [1, 2, 3],
+    inventory: [] // Тут лежать куплені, але не примінені предмети
+};
 
-// Конфіг з цінами на розблокування (Stars) та часом (+40%)
 const config = [
     {}, 
     {e:"⭐", n:"Жовта", s:0.01, t:1680, unlock: 0}, 
     {e:"💚", n:"Зелена", s:0.02, t:3360, unlock: 0}, 
     {e:"❤️", n:"Червона", s:0.03, t:7560, unlock: 0}, 
-    {e:"💙", n:"Синя", s:0.04, t:15120, unlock: 3},  // 3 зірки
-    {e:"💜", n:"Фіолетова", s:0.05, t:30240, unlock: 6}, // 6 зірок
-    {e:"🧡", n:"Помаранчева", s:0.07, t:45000, unlock: 8}, // 8 зірок
-    {e:"💎", n:"Діамантова", s:0.10, t:86400, unlock: 15} // 15 зірок
+    {e:"💙", n:"Синя", s:0.04, t:15120, unlock: 3},
+    {e:"💜", n:"Фіолетова", s:0.05, t:30240, unlock: 6},
+    {e:"🧡", n:"Помаранчева", s:0.07, t:45000, unlock: 8},
+    {e:"💎", n:"Діамантова", s:0.10, t:86400, unlock: 15}
 ];
 
 function init() {
-    let saved = localStorage.getItem('mine_stars_pro_final');
+    tg.expand();
+    let saved = localStorage.getItem('mine_stars_ultimate_v1');
     if(saved) user = JSON.parse(saved);
+    
+    // Перевірка, чи ми повернулися від бота з покупкою (імітація для тесту)
+    // В реальності бот має оновити дані через бекенд, але ми додамо перевірку URL-параметрів якщо треба
+    
     updateUI(); renderMap(); renderShop();
-    setInterval(() => { renderMap(); updateUI(); }, 1000);
+    setInterval(() => { renderMap(); updateUI(); save(); }, 1000);
 }
 
 function updateUI() {
     document.getElementById('balance').innerText = user.balance.toFixed(2);
     document.getElementById('lvl-badge').innerText = user.level;
-    document.getElementById('pick-status').innerText = user.pickaxe ? "ТАК" : "НІ";
-    document.getElementById('withdraw-bal').innerText = user.balance.toFixed(2);
 }
 
 function renderMap() {
@@ -121,7 +128,7 @@ function renderMap() {
             } else {
                 let left = Math.ceil((obj.finish - Date.now())/1000);
                 if(left <= 0) {
-                    d.innerHTML = `<span style="font-size:50px">${obj.emoji}</span>`;
+                    d.innerHTML = `<span style="font-size:50px">${obj.emoji}</span><br><small>ЗІБРАТИ</small>`;
                     d.onclick = () => collect(i);
                 } else {
                     let h = Math.floor(left/3600); let m = Math.floor((left%3600)/60);
@@ -140,19 +147,18 @@ function openSeedSelector(i) {
         let s = config[lvl];
         let price = (s.s * 0.4).toFixed(3);
         list.innerHTML += `<div class="card" onclick="startGrow(${lvl}, ${price})">
-            <span>${s.e} ${s.n}</span> <span>${price} ⭐</span>
+            <span>${s.e} ${s.n}</span> <b>${price} ⭐ (ігрова)</b>
         </div>`;
     });
     document.getElementById('seed-selector').style.display = 'block';
 }
 
 function startGrow(lvl, price) {
-    if(user.balance < price) return tg.showAlert("Мало грошей!");
+    if(user.balance < price) return tg.showAlert("Недостатньо ігрової валюти!");
     user.balance -= price;
     let s = config[lvl];
     user.map[selectedSlot] = { status:'growing', emoji: s.e, finish: Date.now() + (s.t * 1000), reward: s.s };
-    document.getElementById('seed-selector').style.display = 'none';
-    save();
+    closePopups();
 }
 
 function collect(i) {
@@ -160,7 +166,7 @@ function collect(i) {
     if(user.pickaxe) r *= 1.2;
     user.balance += r;
     user.map[i] = {status:'empty'};
-    save();
+    tg.HapticFeedback.notificationOccurred('success');
 }
 
 function renderShop() {
@@ -169,18 +175,61 @@ function renderShop() {
         let s = config[i];
         let isBought = user.unlockedLevels.includes(i);
         html += `<div class="card">
-            <div><b>${s.e} Насіння ${s.n}</b><br><small>Дохід: ${s.s} за врожай</small></div>
-            <button class="m-btn ${isBought?'locked':'real'}" onclick="${isBought?'':`payReal('unlock_lvl_${i}')`}">
-                ${isBought ? 'ВІДКРИТО' : s.unlock + ' ⭐️'}
+            <div><b>${s.e} Насіння ${s.n}</b><br><small>Назавжди</small></div>
+            <button class="m-btn btn-real" onclick="${isBought?'':`exitToBot('unlock_lvl_${i}')`}">
+                ${isBought ? 'КУПЛЕНО' : s.unlock + ' ⭐️'}
             </button>
         </div>`;
     }
     document.getElementById('seeds-shop').innerHTML = html;
 }
 
-function payReal(action) {
-    tg.sendData(action); // Надсилаємо команду боту
-    tg.showAlert("Запит надіслано боту! Перевір повідомлення від бота для оплати.");
+// ФУНКЦІЯ ВИХОДУ ДО БОТА
+function exitToBot(action) {
+    tg.sendData(action); 
+    // Закриваємо Mini App, щоб користувач побачив повідомлення від бота
+    setTimeout(() => { tg.close(); }, 500);
+}
+
+function openInventory() {
+    let list = document.getElementById('inventory-list');
+    list.innerHTML = '';
+    if(user.inventory.length === 0) {
+        list.innerHTML = '<center style="padding:20px;opacity:0.5">Кошик порожній. Купіть щось у магазині!</center>';
+    }
+    user.inventory.forEach((item, index) => {
+        let name = item === 'pickaxe' ? "⛏️ Кирка" : item.startsWith('unlock_') ? "📦 Насіння" : "🌱 Грядка";
+        list.innerHTML += `<div class="card">
+            <span>${name}</span>
+            <button class="m-btn btn-use" onclick="useItem(${index})">ПРИМІНИТИ</button>
+        </div>`;
+    });
+    document.getElementById('inventory-modal').style.display = 'block';
+}
+
+function useItem(index) {
+    let item = user.inventory[index];
+    if(item === 'pickaxe') {
+        user.pickaxe = true;
+        tg.showAlert("Кирка активована! +20% доходу назавжди.");
+    } else if(item === 'plot') {
+        user.plots++;
+        tg.showAlert("Додано нову грядку назавжди!");
+    } else if(item.startsWith('unlock_')) {
+        let lvl = parseInt(item.split('_')[1]);
+        if(!user.unlockedLevels.includes(lvl)) user.unlockedLevels.push(lvl);
+        tg.showAlert("Нове насіння розблоковано!");
+    }
+    user.inventory.splice(index, 1); // Видаляємо з кошика
+    closePopups();
+    renderMap();
+    renderShop();
+    save();
+}
+
+function closePopups() {
+    document.getElementById('seed-selector').style.display = 'none';
+    document.getElementById('inventory-modal').style.display = 'none';
 }
 
 function show(s, b) {
@@ -189,8 +238,10 @@ function show(s, b) {
     document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
     b.classList.add('active');
 }
-function save() { localStorage.setItem('mine_stars_pro_final', JSON.stringify(user)); }
+
+function save() { 
+    localStorage.setItem('mine_stars_ultimate_v1', JSON.stringify(user)); 
+}
 </script>
 </body>
-    </html>
-    
+</html>
