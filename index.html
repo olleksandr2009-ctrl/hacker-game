@@ -3,70 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>Mine Stars: Evolution</title>
+    <title>Mine Stars: Colored Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root{--bg:#0f0c29;--card:rgba(22, 33, 62, 0.9);--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#3d2b1f;--red:#e74c3c;}
+        :root{--bg:#0f0c29;--card:rgba(22, 33, 62, 0.9);--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#3d2b1f;}
         body{background:linear-gradient(135deg, #0f0c29, #1a1a2e);margin:0;font-family:'Segoe UI',sans-serif;color:white;overflow:hidden;user-select:none;}
 
         .header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100;}
-        .stats-line{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:8px;}
+        .stats-line{display:flex;justify-content:space-between;align-items:center;font-size:14px;}
         
-        .level-bar-container{flex-grow:1;background:#333;height:16px;border-radius:8px;overflow:hidden;position:relative;border:1px solid #444;margin-left:10px;}
-        .level-bar-fill{background:linear-gradient(90deg, var(--accent), #3a7bd5);height:100%;transition:width 0.5s;}
-        .level-text{position:absolute;width:100%;text-align:center;font-size:10px;font-weight:bold;line-height:16px;color:white;text-shadow:1px 1px 1px black;}
-
         .screen{display:none;height:78vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:120px;}
         .active-screen{display:block;animation:fadeIn 0.4s;}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 
         .farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
-        .slot{height:140px;background:var(--dirt);border:3px solid #5d4037;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 6px 0 #2a1d15;transition:0.1s;}
-        .slot:active{transform:translateY(4px);box-shadow:0 2px 0 #2a1d15;}
-        .slot.locked{background:rgba(0,0,0,0.4); border: 2px dashed #555; opacity:0.6; box-shadow:none;}
+        .slot{height:140px;background:var(--dirt);border:3px solid #5d4037;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 6px 0 #2a1d15;}
 
-        /* АНІМАЦІЯ РОСТУ */
-        .star-growing {
-            transition: transform 1s, opacity 1s;
-            filter: grayscale(0.8) blur(1px);
-            opacity: 0.4;
-            transform: scale(0.4);
-        }
-        .star-ready {
-            filter: grayscale(0) blur(0);
-            opacity: 1;
-            transform: scale(1.1);
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1.1); filter: drop-shadow(0 0 5px var(--gold)); }
-            50% { transform: scale(1.2); filter: drop-shadow(0 0 15px var(--gold)); }
-            100% { transform: scale(1.1); filter: drop-shadow(0 0 5px var(--gold)); }
-        }
+        /* Анімація */
+        .star-growing { transition: 1s; opacity: 0.4; transform: scale(0.4); filter: blur(1px); }
+        .star-ready { opacity: 1; transform: scale(1.1); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1.1); } 50% { transform: scale(1.2); } }
+
+        /* Кошик (Вибір насіння) */
+        #seed-selector{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:90%;background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:15px;z-index:200;backdrop-filter:blur(15px);}
+        .seed-option{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin-bottom:8px;}
 
         .m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:12px;border-radius:10px;font-weight:bold;width:100%;margin-top:5px;cursor:pointer;}
-        .m-btn:disabled{background:#7f8c8d;opacity:0.5;}
-        
-        .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:12px 0;border-top:2px solid #0f3460;z-index:100;backdrop-filter:blur(10px);}
+        .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:12px 0;border-top:2px solid #0f3460;z-index:100;}
         .nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:10px;}
         .nav-btn.active{color:var(--accent);}
         .card{background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.1);}
+        .price-tag{font-size:10px;background:rgba(0,0,0,0.3);padding:2px 5px;border-radius:5px;color:var(--gold);}
     </style>
 </head>
 <body onload="init()">
 
+<div id="seed-selector">
+    <h4 style="margin:0 0 10px 0; text-align:center">🧺 ОБЕРИ ЗІРКУ</h4>
+    <div id="seed-list"></div>
+    <button class="m-btn" style="background:var(--red);color:white" onclick="closeSeeds()">❌ ЗАКРИТИ</button>
+</div>
+
 <div class="header">
     <div class="stats-line">
         <div style="color:var(--gold)">⭐ <span id="balance">0.00</span></div>
-        <div style="font-weight:bold;color:var(--accent)">MINE STARS</div>
-        <div style="font-size:10px">⛏️ <span id="pickaxe-status">НІ</span></div>
-    </div>
-    <div style="display:flex;align-items:center">
-        <span id="lvl-badge" style="background:var(--accent);color:black;padding:2px 6px;border-radius:5px;font-size:10px;font-weight:bold">LVL 1</span>
-        <div class="level-bar-container">
-            <div id="level-fill" class="level-bar-fill" style="width:0%"></div>
-            <div class="level-text" id="level-display">Завантаження...</div>
-        </div>
+        <div style="font-weight:bold;color:var(--accent)">MINE STARS PRO</div>
+        <div style="font-size:11px">Lvl: <span id="lvl-badge">1</span></div>
     </div>
 </div>
 
@@ -75,26 +57,20 @@
 </div>
 
 <div id="shop-screen" class="screen">
-    <div class="card" id="upgrade-section">
-        <h4 style="margin:0;color:var(--accent)">🆙 НАСТУПНИЙ РІВЕНЬ</h4>
-        <p id="up-info" style="font-size:12px;margin:10px 0;"></p>
-        <button class="m-btn" id="btn-up-game" onclick="upgradeGame()">ПРОКАЧАТИ (ІГРОВІ ⭐)</button>
-        <button class="m-btn" id="btn-up-real" style="background:var(--green);color:white;display:none" onclick="sendToBot('upgrade_level_real')">ПРОПУСТИТИ (REAL ⭐)</button>
+    <div class="card">
+        <h4 style="margin:0 0 10px 0;color:var(--accent)">📊 ПРАЙС-ЛИСТ ЗІРОК</h4>
+        <div id="full-price-list"></div>
     </div>
     <div class="card">
-        <h4 style="margin:0;color:var(--gold)">🛠️ МАГАЗИН БАФІВ</h4>
-        <p style="font-size:11px">Кирка зірок дає +20% до кожного врожаю!</p>
-        <button class="m-btn" style="background:#ff9800;color:white" onclick="sendToBot('buy_pickaxe')">КУПИТИ КИРКУ (REAL ⭐)</button>
-        <button class="m-btn" style="background:var(--accent);color:black;margin-top:10px" onclick="sendToBot('buy_new_plot')">НОВА ГРЯДКА (REAL ⭐)</button>
+        <h4 style="margin:0;color:var(--gold)">🛒 МАГАЗИН БАФІВ</h4>
+        <button class="m-btn" style="background:#ff9800;color:white" onclick="sendToBot('buy_pickaxe')">⛏️ КИРКА (+20% доходу) (35 ⭐)</button>
+        <button class="m-btn" style="background:var(--accent);color:black;margin-top:10px" onclick="sendToBot('buy_new_plot')">🌱 НОВА ГРЯДКА (25 ⭐)</button>
     </div>
 </div>
 
 <div id="dealer-screen" class="screen">
-    <h3 style="color:var(--accent)">💰 ВИВІД КОШТІВ</h3>
-    <div class="card">
-        <p>Ваш баланс: <b id="withdraw-bal">0.00</b> ⭐</p>
-        <p style="font-size:12px;color:#bdc3c7">Мінімальний вивід: <b>20.00 ⭐</b></p>
-    </div>
+    <h3 style="color:var(--accent)">💰 ВИВІД</h3>
+    <div class="card">Баланс: <b id="withdraw-bal">0.00</b> ⭐</div>
     <button class="m-btn" style="background:var(--green);color:white" onclick="sendToBot('withdraw_request')">ПОДАТИ ЗАЯВКУ</button>
 </div>
 
@@ -106,114 +82,114 @@
 
 <script>
 let tg = window.Telegram.WebApp;
+let selectedSlot = null;
 let user = {
     balance: 0, level: 1, pickaxe: false,
-    plots: 2, map: [ {status:'empty'}, {status:'empty'} ],
-    stats: {}
+    plots: 2, map: {} 
 };
 
-// ТВОЯ ЕКОНОМІКА
+// ТВОЯ ЕКОНОМІКА З КОЛЬОРОВИМИ ЗІРКАМИ
 const config = [
-    {}, // 0
-    {e:"🟡", n:"Жовта", s:0.01, t:1200, up:0.5},   // 20хв
-    {e:"🟢", n:"Зелена", s:0.02, t:2400, up:1.5},  // 40хв
-    {e:"🔴", n:"Червона", s:0.03, t:5400, up:5.0},  // 1.5год
-    {e:"🔵", n:"Синя", s:0.04, t:10800, up:10.0}, // 3год
-    {e:"🟣", n:"Фіолетова", s:0.05, t:21600, up:25.0} // 6год
+    {}, 
+    {e:"⭐", n:"Жовта", s:0.01, t:1200, up:0.5, c:"gold"}, 
+    {e:"💚", n:"Зелена", s:0.02, t:2400, up:1.5, c:"#2ecc71"}, 
+    {e:"❤️", n:"Червона", s:0.03, t:5400, up:5.0, c:"#e74c3c"}, 
+    {e:"💙", n:"Синя", s:0.04, t:10800, up:10.0, c:"#3498db"}, 
+    {e:"💜", n:"Фіолетова", s:0.05, t:21600, up:25.0, c:"#9b59b6"}
 ];
 
 function init() {
-    let saved = localStorage.getItem('mine_stars_pro_v4');
+    let saved = localStorage.getItem('mine_stars_colored_v1');
     if(saved) user = JSON.parse(saved);
-    updateUI(); renderMap();
+    updateUI(); renderMap(); renderPriceList();
     setInterval(() => { renderMap(); updateUI(); }, 1000);
 }
 
 function updateUI() {
     document.getElementById('balance').innerText = user.balance.toFixed(2);
     document.getElementById('withdraw-bal').innerText = user.balance.toFixed(2);
-    document.getElementById('lvl-badge').innerText = "LVL " + user.level;
-    document.getElementById('pickaxe-status').innerText = user.pickaxe ? "ТАК (+20%)" : "НІ";
-
-    let next = config[user.level + 1];
-    if(next) {
-        document.getElementById('up-info').innerHTML = `Наступна: ${next.e} ${next.n}<br>Ціна: <b>${config[user.level].up}</b> ігрових ⭐`;
-        document.getElementById('btn-up-real').style.display = user.level >= 4 ? "block" : "none";
-    } else {
-        document.getElementById('upgrade-section').innerHTML = "<h4>MAX LEVEL</h4>";
-    }
+    document.getElementById('lvl-badge').innerText = user.level;
 }
 
 function renderMap() {
     let g = document.getElementById('main-grid'); g.innerHTML = '';
-    for(let i=0; i < 12; i++) {
+    for(let i=0; i < 10; i++) {
         let d = document.createElement('div');
         if(i < user.plots) {
             let obj = user.map[i] || {status:'empty'};
             d.className = 'slot';
             if(obj.status === 'empty') {
-                d.innerHTML = "🟫<br><small>ПОСАДИТИ</small>";
-                d.onclick = () => startGrow(i);
+                d.innerHTML = "<span style='font-size:30px'>➕</span>";
+                d.onclick = () => openSeeds(i);
             } else {
                 let left = Math.ceil((obj.finish - Date.now())/1000);
-                let progress = 1 - (left / config[user.level].t);
                 if(left <= 0) {
-                    d.innerHTML = `<span class="star-ready" style="font-size:50px">${obj.emoji}</span>`;
+                    d.innerHTML = `<span class="star-ready" style="font-size:50px; color:${obj.color}">${obj.emoji}</span>`;
                     d.onclick = () => collect(i);
                 } else {
-                    d.innerHTML = `<span class="star-growing" style="font-size:50px; transform:scale(${0.4 + (progress * 0.7)}); opacity:${0.4 + (progress * 0.6)}">${obj.emoji}</span><br><small>${Math.floor(left/60)}м</small>`;
+                    let prog = 1 - (left / obj.totalTime);
+                    d.innerHTML = `<span class="star-growing" style="font-size:50px; color:${obj.color}; transform:scale(${0.4+(prog*0.7)})">${obj.emoji}</span><br><small>${Math.floor(left/60)}m</small>`;
                 }
             }
-        } else {
-            d.className = 'slot locked';
-            d.innerHTML = "🔒";
-        }
+        } else { d.className = 'slot'; d.innerHTML = "🔒"; }
         g.appendChild(d);
     }
 }
 
-function startGrow(i) {
-    user.map[i] = { status:'growing', emoji: config[user.level].e, finish: Date.now() + (config[user.level].t * 1000) };
-    save(); renderMap();
+function openSeeds(i) {
+    selectedSlot = i;
+    let list = document.getElementById('seed-list'); list.innerHTML = '';
+    // Можна садити тільки зірки свого рівня або нижче
+    for(let i=1; i <= user.level; i++) {
+        let s = config[i];
+        list.innerHTML += `<div class="seed-option" onclick="startGrow(${i})">
+            <span>${s.e} ${s.n}</span>
+            <span class="price-tag">${Math.floor(s.t/60)} хв</span>
+        </div>`;
+    }
+    document.getElementById('seed-selector').style.display = 'block';
+}
+
+function startGrow(lvlIdx) {
+    let s = config[lvlIdx];
+    user.map[selectedSlot] = { 
+        status:'growing', emoji: s.e, color: s.c, 
+        finish: Date.now() + (s.t * 1000), totalTime: s.t, reward: s.s 
+    };
+    closeSeeds(); save(); renderMap();
 }
 
 function collect(i) {
     let obj = user.map[i];
-    if(obj && Date.now() >= obj.finish) {
-        let reward = config[user.level].s;
-        if(user.pickaxe) reward *= 1.2;
-        user.balance += reward;
-        user.map[i] = {status:'empty'};
-        tg.HapticFeedback.impactOccurred('success');
-        save(); renderMap();
-    }
+    let reward = obj.reward;
+    if(user.pickaxe) reward *= 1.2;
+    user.balance += reward;
+    user.map[i] = {status:'empty'};
+    tg.HapticFeedback.impactOccurred('success');
+    save();
 }
 
-function upgradeGame() {
-    let cost = config[user.level].up;
-    if(user.balance >= cost) {
-        user.balance -= cost;
-        user.level++;
-        save(); updateUI();
-        tg.showAlert("Рівень підвищено!");
-    } else tg.showAlert("Недостатньо зірок!");
+function renderPriceList() {
+    let html = "";
+    config.forEach((s, i) => {
+        if(i === 0) return;
+        html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px; border-bottom:1px solid #333; padding:5px">
+            <span>${s.e} ${s.n} (Lvl ${i})</span>
+            <span>${s.s} ⭐ / ${Math.floor(s.t/60)} хв</span>
+        </div>`;
+    });
+    document.getElementById('full-price-list').innerHTML = html;
 }
 
-function sendToBot(action) {
-    if(action === 'withdraw_request' && user.balance < 20) {
-        return tg.showAlert("Треба мінімум 20 ⭐!");
-    }
-    tg.sendData(action);
-}
-
+function closeSeeds() { document.getElementById('seed-selector').style.display = 'none'; }
+function sendToBot(a) { tg.sendData(a); }
 function show(s, b) {
     document.querySelectorAll('.screen').forEach(x => x.classList.remove('active-screen'));
     document.getElementById(s + '-screen').classList.add('active-screen');
     document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
     b.classList.add('active');
 }
-
-function save() { localStorage.setItem('mine_stars_pro_v4', JSON.stringify(user)); }
+function save() { localStorage.setItem('mine_stars_colored_v1', JSON.stringify(user)); }
 </script>
 </body>
 </html>
