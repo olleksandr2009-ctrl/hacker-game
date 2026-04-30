@@ -1,52 +1,228 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mine Stars App</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <title>Mine Stars: Farm Edition</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #05050a; color: white; font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; }
-        .balance-box { margin-top: 50px; }
-        .stars-count { font-size: 60px; font-weight: bold; color: #ffca28; text-shadow: 0 0 15px rgba(255, 202, 40, 0.4); }
-        .main-btn { width: 240px; margin-top: 40px; cursor: pointer; transition: 0.1s; -webkit-tap-highlight-color: transparent; }
-        .main-btn:active { transform: scale(0.92); }
-        .withdraw-btn { 
-            background: linear-gradient(135deg, #ffca28, #ff8f00); color: black; 
-            padding: 18px 45px; border-radius: 18px; font-weight: bold;
-            display: inline-block; margin-top: 60px; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 202, 40, 0.2);
-        }
+        :root{--bg:#05050a;--card:rgba(20, 20, 35, 0.9);--accent:#ffca28;--gold:#ffca28;--green:#2ecc71;--dirt:#2d1b0d;--grass:#1a1a2e;--red:#e74c3c;}
+        body{background:radial-gradient(circle, #1a1a2e, #05050a);margin:0;font-family:'Segoe UI',sans-serif;color:white;overflow:hidden;user-select:none;}
+
+        .header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100;}
+        .stats-line{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:8px;}
+        
+        .level-bar-container{flex-grow:1;background:#222;height:16px;border-radius:8px;overflow:hidden;position:relative;border:1px solid #444;margin-left:10px;}
+        .level-bar-fill{background:linear-gradient(90deg, #ffca28, #ff8f00);height:100%;transition:width 0.5s;}
+        .level-text{position:absolute;width:100%;text-align:center;font-size:10px;font-weight:bold;line-height:16px;color:white;text-shadow:1px 1px 1px black;}
+
+        .screen{display:none;height:80vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:120px;}
+        .active-screen{display:block;animation:fadeIn 0.3s;}
+        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+        .farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+        .slot{height:140px;background:var(--dirt);border:2px solid #5d4037;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transition:0.1s;}
+        .slot:active{transform:scale(0.95);}
+        .slot.ready{border-color:var(--accent);box-shadow:0 0 15px rgba(255,202,40,0.3);}
+        .slot.locked{background:rgba(0,0,0,0.4);border:2px dashed #444;opacity:0.6;}
+
+        .m-btn{background:var(--accent);color:#000;border:none;padding:12px;border-radius:10px;font-weight:bold;width:100%;margin-top:10px;cursor:pointer;}
+        .footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:15px 0;border-top:2px solid #222;z-index:100;}
+        .nav-btn{flex:1;background:none;border:none;color:#666;display:flex;flex-direction:column;align-items:center;font-size:10px;}
+        .nav-btn.active{color:var(--accent);}
+        .card{background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;border:1px solid #333;}
     </style>
 </head>
-<body>
+<body onload="init()">
 
-    <div class="balance-box">
-        <div id="stars" class="stars-count">0</div>
-        <p style="opacity: 0.6; letter-spacing: 2px; font-size: 14px;">⭐ ЗІБРАНО STARS</p>
+<div class="header">
+    <div class="stats-line">
+        <div style="color:var(--gold);font-weight:bold">⭐ <span id="balance">0.0000</span></div>
+        <div style="color:var(--accent)">MINE STARS FARM</div>
+        <div style="font-size:10px">X2: <span id="buff-status">OFF</span></div>
     </div>
+    <div style="display:flex;align-items:center">
+        <span id="lvl-badge" style="background:var(--accent);color:black;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:bold">LVL 1</span>
+        <div class="level-bar-container">
+            <div id="level-fill" class="level-bar-fill" style="width:0%"></div>
+            <div class="level-text" id="level-display">0/10 врожаїв</div>
+        </div>
+    </div>
+</div>
 
-    <img src="https://it-ua.net/wp-content/uploads/2024/06/Telegram-Stars.webp" class="main-btn" onclick="tapStar()">
+<div id="map-screen" class="screen active-screen">
+    <div class="farm-grid" id="main-grid"></div>
+</div>
 
-    <br>
-    <div class="withdraw-btn" onclick="sendWithdraw()">ВИВЕСТИ НА БАЛАНС</div>
+<div id="shop-screen" class="screen">
+    <div class="card">
+        <h4 style="margin:0;color:var(--accent)">🚀 ПРИСКОРЕННЯ</h4>
+        <button class="m-btn" onclick="buyX2()">КУПИТИ BUFF X2 (REAL ⭐)</button>
+        <button class="m-btn" style="background:#4caf50;color:white" onclick="buyPlotReal()">НОВА ГРЯДКА (REAL ⭐)</button>
+    </div>
+    <div class="card">
+        <h4 style="margin:0;color:var(--gold)">🧪 ГЕНЕТИКА ЗІРОК</h4>
+        <div id="seed-list"></div>
+    </div>
+</div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        let tg = window.Telegram.WebApp;
-        let balance = 0;
+<div id="dealer-screen" class="screen">
+    <h3 style="color:var(--accent)">📦 СКЛАД ВРОЖАЮ</h3>
+    <div id="inventory-sell"></div>
+    <button class="m-btn" style="background:var(--green);color:white;margin-top:15px;" onclick="sellAll()">ОБМІНЯТИ НА ІГРОВІ ⭐</button>
+    <button class="m-btn" style="background:var(--red);color:white;margin-top:20px;" onclick="requestWithdraw()">ВИВЕСТИ НА БАЛАНС</button>
+</div>
 
-        function tapStar() {
-            balance += 1;
-            document.getElementById('stars').innerText = balance;
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+<div class="footer">
+    <button class="nav-btn active" onclick="show('map',this)">🚜 ФЕРМА</button>
+    <button class="nav-btn" onclick="show('shop',this)">🛒 МАГАЗИН</button>
+    <button class="nav-btn" onclick="show('dealer',this)">💰 ВИВІД</button>
+</div>
+
+<script>
+let tg = window.Telegram.WebApp;
+let user = {
+    balance: 0, level: 1, totalHarvests: 0, x2: false,
+    plots: 2,
+    map: [ {status:'empty'}, {status:'empty'} ],
+    stats: {}, unlockedIdx: 0
+};
+
+// Твої 8 рівнів
+const starLevels = [
+    {e:"🟡", n:"Жовта", s:0.001, t:900, req:0, c:"#ffeb3b"},
+    {e:"🟢", n:"Зелена", s:3, t:900, req:10, c:"#4caf50"},
+    {e:"🔴", n:"Червона", s:4, t:900, req:30, c:"#f44336"},
+    {e:"🔵", n:"Синя", s:5, t:900, req:70, c:"#2196f3"},
+    {e:"🟣", n:"Фіолетова", s:10, t:900, req:150, c:"#9c27b0"},
+    {e:"🟠", n:"Помаранчева", s:20, t:900, req:300, c:"#ff9800"},
+    {e:"💎", n:"Блакитна", s:50, t:900, req:600, c:"#00bcd4"},
+    {e:"⚪", n:"Біла", s:100, t:900, req:1000, c:"#ffffff"}
+];
+
+function init() {
+    let saved = localStorage.getItem('mine_stars_pro');
+    if(saved) user = JSON.parse(saved);
+    updateUI(); renderMap();
+    setInterval(() => { renderMap(); updateUI(); }, 1000);
+}
+
+function updateUI() {
+    document.getElementById('balance').innerText = user.balance.toFixed(4);
+    document.getElementById('buff-status').innerText = user.x2 ? "ON (x2)" : "OFF";
+    document.getElementById('lvl-badge').innerText = "LVL " + user.level;
+    
+    let next = starLevels[user.unlockedIdx + 1] ? starLevels[user.unlockedIdx + 1].req : user.totalHarvests;
+    let prev = starLevels[user.unlockedIdx].req;
+    let prog = next === prev ? 100 : ((user.totalHarvests - prev) / (next - prev)) * 100;
+    document.getElementById('level-fill').style.width = prog + "%";
+    document.getElementById('level-display').innerText = `${user.totalHarvests}/${next} врожаїв`;
+
+    if(next !== user.totalHarvests && user.totalHarvests >= next && user.unlockedIdx < 7) {
+        user.unlockedIdx++; user.level++; save();
+    }
+}
+
+function renderMap() {
+    let g = document.getElementById('main-grid'); g.innerHTML = '';
+    for(let i=0; i < 12; i++) {
+        let d = document.createElement('div');
+        if(i < user.plots) {
+            let obj = user.map[i] || {status:'empty'};
+            d.className = 'slot';
+            if(obj.status === 'empty') {
+                d.innerHTML = "<small>ПОСАДИТИ</small>";
+                d.onclick = () => startGrow(i);
+            } else {
+                let left = Math.ceil((obj.finish - Date.now())/1000);
+                if(left <= 0) {
+                    d.classList.add('ready');
+                    d.innerHTML = `<span style="font-size:40px">${obj.emoji}</span><br><small>ЗІБРАТИ</small>`;
+                } else {
+                    let m = Math.floor(left/60); let s = left%60;
+                    d.innerHTML = `⌛<br><small>${m}:${s<10?'0':''}${s}</small>`;
+                }
+                d.onclick = () => collect(i);
+            }
+        } else {
+            d.className = 'slot locked';
+            d.innerHTML = "🔒";
         }
+        g.appendChild(d);
+    }
+}
 
-        function sendWithdraw() {
-            tg.sendData("withdraw_request");
-            tg.close();
+function startGrow(i) {
+    let current = starLevels[user.unlockedIdx];
+    user.map[i] = { status:'growing', emoji: current.e, finish: Date.now() + (current.t * 1000) };
+    save(); renderMap();
+}
+
+function collect(i) {
+    let obj = user.map[i];
+    if(obj && Date.now() >= obj.finish) {
+        user.stats[obj.emoji] = (user.stats[obj.emoji] || 0) + 1;
+        user.totalHarvests++;
+        user.map[i] = {status:'empty'};
+        tg.HapticFeedback.impactOccurred('light');
+        save(); renderMap();
+    }
+}
+
+function renderShop() {
+    let h = "";
+    starLevels.forEach((s, idx) => {
+        let locked = idx > user.unlockedIdx;
+        h += `<div class="card" style="opacity:${locked?0.5:1}">
+            <b>${locked?'🔒':s.e} ${s.n} зірка</b><br>
+            <small>Дохід: ${s.s} ⭐ | Ріст: 15 хв</small>
+        </div>`;
+    });
+    document.getElementById('seed-list').innerHTML = h;
+}
+
+function renderDealer() {
+    let h = ""; let empty = true;
+    for(let e in user.stats) {
+        if(user.stats[e] > 0) {
+            let info = starLevels.find(x => x.e === e);
+            let reward = user.stats[e] * info.s * (user.x2 ? 2 : 1);
+            h += `<div class="card" style="display:flex;justify-content:space-between;">
+                <span>${e} x${user.stats[e]}</span>
+                <span style="color:var(--gold)">+${reward.toFixed(4)} ⭐</span>
+            </div>`;
+            empty = false;
         }
+    }
+    document.getElementById('inventory-sell').innerHTML = empty ? "<center>Склад порожній</center>" : h;
+}
 
-        tg.expand();
-    </script>
+function sellAll() {
+    let inc = 0;
+    for(let e in user.stats) {
+        let info = starLevels.find(x => x.e === e);
+        inc += user.stats[e] * info.s * (user.x2 ? 2 : 1);
+        user.stats[e] = 0;
+    }
+    user.balance += inc;
+    save(); renderDealer();
+    tg.showAlert("Врожай обміняно!");
+}
+
+function show(s, b) {
+    document.querySelectorAll('.screen').forEach(x => x.classList.remove('active-screen'));
+    document.getElementById(s + '-screen').classList.add('active-screen');
+    document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+    b.classList.add('active');
+    if(s === 'shop') renderShop();
+    if(s === 'dealer') renderDealer();
+}
+
+function buyX2() { tg.sendData("buy_x2"); }
+function buyPlotReal() { tg.sendData("buy_new_plot"); }
+function requestWithdraw() { tg.sendData("withdraw_request"); }
+function save() { localStorage.setItem('mine_stars_pro', JSON.stringify(user)); }
+</script>
 </body>
-</html>
+    </html>
+    
