@@ -1,360 +1,61 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>Agro Empire: Pro Edition</title><script src="https://telegram.org/js/telegram-web-app.js"></script><style>
-:root{--bg:#0f0c29;--card:rgba(22, 33, 62, 0.8);--accent:#48dbfb;--gold:#f1c40f;--green:#2ecc71;--dirt:#5d4037;--grass:#27ae60;--stone:#7f8c8d;--red:#e74c3c;}
-body{background:linear-gradient(135deg, #0f0c29, #302b63, #24243e);margin:0;font-family:'Segoe UI',sans-serif;color:white;overflow:hidden;user-select:none;}
-
-/* Header & Level Button */
-.header{background:var(--card);padding:10px;border-bottom:2px solid var(--accent);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100;}
-.stats-line{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:8px;}
-.level-area{display:flex;align-items:center;gap:10px;}
-.lvl-btn{background:var(--accent);color:#000;border:none;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px var(--accent);}
-.level-bar-container{flex-grow:1;background:#333;height:14px;border-radius:7px;overflow:hidden;position:relative;border:1px solid #444;}
-.level-bar-fill{background:linear-gradient(90deg, #00d2ff, #3a7bd5);height:100%;transition:width 0.5s cubic-bezier(0.4, 0, 0.2, 1);}
-.level-text{position:absolute;width:100%;text-align:center;font-size:9px;font-weight:bold;line-height:14px;color:white;text-shadow:1px 1px 1px black;}
-
-/* Screens & Animations */
-.screen{display:none;height:78vh;overflow-y:auto;padding:15px;box-sizing:border-box;padding-bottom:120px;animation:fadeIn 0.4s ease-out;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-.active-screen{display:block;}
-
-.tabs-loc{display:flex;gap:10px;margin-bottom:15px;}
-.tab-btn{flex:1;padding:10px;border-radius:10px;border:none;background:var(--card);color:white;font-weight:bold;border:1px solid #333;transition:0.3s;}
-.tab-btn.active{background:var(--accent);color:#1a1a2e;transform:scale(1.05);}
-
-/* Grid & Slots */
-.farm-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
-.slot{height:130px;background:var(--grass);border:3px solid #1e8449;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 6px 0 #145a32;transition:0.1s active;}
-.slot:active{transform:translateY(4px);box-shadow:0 2px 0 #145a32;}
-.slot.item-plot{background:var(--dirt); border-color:#3e2723;}
-.slot.item-stone{background:var(--stone); border-color:#5a6263;}
-.slot.locked{background:rgba(0,0,0,0.3); border: 2px dashed #555; opacity:0.6; box-shadow:none;}
-
-/* Modal/Popup */
-#lvl-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:20px;z-index:1000;backdrop-filter:blur(15px);text-align:center;box-shadow:0 0 30px rgba(0,0,0,0.5);}
-.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999;}
-
-.m-btn{background:var(--gold);color:#1a1a2e;border:none;padding:12px;border-radius:10px;font-weight:bold;width:100%;margin-top:5px;cursor:pointer;transition:0.2s;}
-.m-btn:active{transform:scale(0.95);}
-.footer{position:fixed;bottom:0;width:100%;display:flex;background:var(--card);padding:12px 0;border-top:2px solid #0f3460;z-index:100;backdrop-filter:blur(10px);}
-.nav-btn{flex:1;background:none;border:none;color:#95a5a6;display:flex;flex-direction:column;align-items:center;font-size:9px;transition:0.3s;}
-.nav-btn.active{color:var(--accent);transform:translateY(-5px);}
-.card{background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.1);}
-input, select{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0;background:#0f3460;color:white;box-sizing:border-box;}
-</style></head><body onload="init()">
-
-<div class="overlay" id="overlay" onclick="closeModal()"></div>
-<div id="lvl-modal">
-    <h3 style="color:var(--accent);margin-top:0">🎯 ЗАВДАННЯ</h3>
-    <div id="lvl-task-desc">Завантаження...</div>
-    <button class="m-btn" onclick="closeModal()" style="margin-top:20px">ЗРОЗУМІЛО</button>
-</div>
-
-<div class="header">
-    <div class="stats-line">
-        <div style="color:var(--gold)">💰 <span id="balance">0</span></div>
-        <div style="font-weight:bold;letter-spacing:1px;color:var(--accent)">AGRO EMPIRE</div>
-        <div style="color:var(--accent)">💎 <span id="diamonds">0.0</span></div>
-    </div>
-    <div class="level-area">
-        <button class="lvl-btn" onclick="openLvlModal()">УРОВЕНЬ</button>
-        <div class="level-bar-container">
-            <div id="level-fill" class="level-bar-fill" style="width:0%"></div>
-            <div class="level-text" id="level-display">Рівень 1 (0/10)</div>
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1c1c1c; color: white; margin: 0; padding: 15px; }
+        .header { text-align: center; font-size: 24px; padding: 20px; color: #ffad00; }
+        .card { background: #2d2d2d; border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #444; }
+        .btn { background: #ffad00; color: black; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #2d2d2d; display: flex; border-top: 1px solid #444; }
+        .nav-item { flex: 1; text-align: center; padding: 15px; color: #888; cursor: pointer; }
+        .nav-item.active { color: #ffad00; border-top: 2px solid #ffad00; }
+        #withdraw-page { display: none; text-align: center; }
+    </style>
+</head>
+<body>
+    <div id="earn-page">
+        <div class="header">💰 <span id="stars-balance">0.0</span> Stars</div>
+        <div id="channels-list">
+            <div class="card">
+                <div><strong>Paws & Tails</strong><br><small>+0.4 Stars</small></div>
+                <button class="btn" onclick="subscribe('https://t.me/paws_tails_test')">Підписатися</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="map-screen" class="screen active-screen">
-    <div class="tabs-loc">
-        <button id="tab-farm" class="tab-btn active" onclick="switchLoc('farm')">🚜 ПОЛЕ</button>
-        <button id="tab-mine" class="tab-btn" onclick="switchLoc('mine')">⛏️ КАР'ЄР</button>
+    <div id="withdraw-page">
+        <div class="header">💳 Вивід</div>
+        <p>Мінімум: 15 Stars</p>
+        <button class="btn" style="width: 80%;" onclick="requestWithdraw()">Вивести Stars</button>
     </div>
-    <div class="farm-grid" id="main-grid"></div>
-</div>
 
-<div id="shop-screen" class="screen">
-    <div class="card">
-        <h4 style="margin:0;color:var(--accent)">🏗️ БУДІВНИЦТВО</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <button class="m-btn" onclick="buyObject('plot', 10)">🌱 Грядка (10💰)</button>
-            <button class="m-btn" style="background:#bdc3c7" onclick="buyObject('stone', 50)">🪨 Камінь (50💰)</button>
-        </div>
+    <div class="nav">
+        <div class="nav-item active" id="btn-earn" onclick="tab('earn')">Заробити</div>
+        <div class="nav-item" id="btn-withdraw" onclick="tab('withdraw')">Вивести</div>
     </div>
-    <div class="card"><h4 style="margin:0;color:var(--gold)">🛒 НАСІННЯ</h4><div id="seed-list"></div></div>
-</div>
 
-<div id="auction-screen" class="screen">
-    <div class="tabs-loc">
-        <button id="auc-buy-tab" class="tab-btn active" onclick="switchAuc('buy')">🛒 КУПИТИ</button>
-        <button id="auc-sell-tab" class="tab-btn" onclick="switchAuc('sell')">📦 МОЇ ЛОТИ</button>
-    </div>
-    <div id="auc-content"></div>
-</div>
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
 
-<div id="dealer-screen" class="screen">
-    <h3 style="color:var(--green)">🚚 СКУПЩИК</h3>
-    <div id="inventory-sell"></div>
-    <button class="m-btn" style="background:var(--green);color:white;margin-top:15px;" onclick="sellAll()">ПРОДАТИ ВСЕ</button>
-</div>
-
-<div class="footer">
-    <button class="nav-btn active" onclick="show('map',this)">🗾 КАРТА</button>
-    <button class="nav-btn" onclick="show('shop',this)">🛒 ШОП</button>
-    <button class="nav-btn" onclick="show('auction',this)">⚖️ АУКЦІОН</button>
-    <button class="nav-btn" onclick="show('dealer',this)">🚚 СКУПЩИК</button>
-</div>
-
-<script>
-let tg = window.Telegram.WebApp;
-let currentLoc = 'farm';
-let currentAucTab = 'buy';
-let user = {
-    balance: 20, diamonds: 0, level: 1, totalHarvests: 0,
-    inventory: { plot: 1, stone: 0, seeds: {} },
-    map_farm: [ {type:'plot', data:null}, null, null, null ],
-    map_mine: [ null, null, null, null ],
-    slots_farm: 4, slots_mine: 4, stats: {}, unlockedIdx: 0,
-    myAuction: [] 
-};
-
-const crops = [
-    {e:"🌾", n:"Пшениця", p:0.5, s:1, t:60, req:0},
-    {e:"🌽", n:"Кукурудза", p:1.2, s:3, t:300, req:10},
-    {e:"🥕", n:"Морква", p:3, s:8, t:1800, req:30},
-    {e:"🍅", n:"Томат", p:7, s:20, t:3600, req:70},
-    {e:"🥔", n:"Картопля", p:12, s:35, t:7200, req:150},
-    {e:"🍓", n:"Полуниця", p:20, s:65, t:14400, req:300},
-    {e:"🌻", n:"Соняшник", p:35, s:120, t:28800, req:600},
-    {e:"🎃", n:"Гарбуз", p:55, s:200, t:43200, req:1000},
-    {e:"🍉", n:"Кавун", p:80, s:350, t:64800, req:1500},
-    {e:"🍇", n:"Виноград", p:100, s:500, t:86400, req:2500}
-];
-
-function init() {
-    let saved = localStorage.getItem('agro_pro_v1');
-    if(saved) user = JSON.parse(saved);
-    checkAuctionExpiry();
-    updateUI(); renderMap();
-    setInterval(() => { renderMap(); updateUI(); checkQuests(); }, 1000);
-}
-
-function openLvlModal() {
-    let next = crops[user.unlockedIdx + 1];
-    let desc = document.getElementById('lvl-task-desc');
-    if(!next) {
-        desc.innerHTML = "Ти досяг максимального рівня! Поки що...";
-    } else {
-        let left = next.req - user.totalHarvests;
-        desc.innerHTML = `Щоб відкрити <b>${next.e} ${next.n}</b>, тобі потрібно зібрати ще <b style="color:var(--gold)">${left}</b> врожаїв. <br><br> Поточний прогрес: ${user.totalHarvests} / ${next.req}`;
-    }
-    document.getElementById('lvl-modal').style.display = 'block';
-    document.getElementById('overlay').style.display = 'block';
-}
-
-function closeModal() {
-    document.getElementById('lvl-modal').style.display = 'none';
-    document.getElementById('overlay').style.display = 'none';
-}
-
-function updateUI() {
-    document.getElementById('balance').innerText = user.balance.toFixed(1);
-    document.getElementById('diamonds').innerText = user.diamonds.toFixed(1);
-    let next = crops[user.unlockedIdx + 1] ? crops[user.unlockedIdx + 1].req : user.totalHarvests;
-    let prev = crops[user.unlockedIdx].req;
-    let prog = next === prev ? 100 : ((user.totalHarvests - prev) / (next - prev)) * 100;
-    document.getElementById('level-fill').style.width = prog + "%";
-    document.getElementById('level-display').innerText = `Lvl ${user.level} (${user.totalHarvests}/${next})`;
-}
-
-function checkQuests() {
-    let next = crops[user.unlockedIdx + 1];
-    if(next && user.totalHarvests >= next.req) {
-        user.unlockedIdx++; user.level++;
-        tg.showPopup({title: 'Новий Рівень!', message: 'Ви відкрили: ' + next.e + ' ' + next.n});
-        save();
-    }
-}
-
-function switchLoc(loc) { 
-    currentLoc = loc; 
-    document.getElementById('tab-farm').className = loc === 'farm' ? 'tab-btn active' : 'tab-btn';
-    document.getElementById('tab-mine').className = loc === 'mine' ? 'tab-btn active' : 'tab-btn';
-    renderMap(); 
-}
-
-function renderMap() {
-    let g = document.getElementById('main-grid'); g.innerHTML = '';
-    let isFarm = currentLoc === 'farm';
-    let map = isFarm ? user.map_farm : user.map_mine;
-    let maxSlots = isFarm ? user.slots_farm : user.slots_mine;
-    for(let i=0; i < 20; i++) {
-        let d = document.createElement('div');
-        if(i < maxSlots) {
-            let obj = map[i]; d.className = 'slot';
-            if(!obj) { d.innerHTML = "<span style='font-size:30px;opacity:0.3'>+</span>"; d.onclick = () => placeObject(i); }
-            else {
-                if(obj.type === 'plot') {
-                    d.classList.add('item-plot');
-                    if(obj.data) {
-                        let left = Math.ceil((obj.data.finish - Date.now())/1000);
-                        if(left <= 0) d.innerHTML = `<b style="font-size:40px">${obj.data.emoji}</b><br><small>READY</small>`;
-                        else d.innerHTML = `🌱<br><small>${left}s</small>`;
-                    } else d.innerHTML = "🟫";
-                } else {
-                    d.classList.add('item-stone');
-                    let left = Math.ceil((obj.next - Date.now())/1000);
-                    d.innerHTML = left <= 0 ? `<span style="font-size:40px">💎</span>` : `⏳`;
-                }
-                d.onclick = () => handleObject(i);
-            }
-        } else if(i === maxSlots) { d.className='slot locked'; d.innerHTML="🔒<br>"+(maxSlots*100); d.onclick=()=>buyLand(maxSlots*100); }
-        else { d.className='slot locked'; d.innerHTML="🔒"; }
-        g.appendChild(d);
-    }
-}
-
-function handleObject(i) {
-    let map = currentLoc === 'farm' ? user.map_farm : user.map_mine;
-    let obj = map[i];
-    if(obj.type === 'plot') {
-        if(!obj.data) {
-            let s = Object.keys(user.inventory.seeds).find(k => user.inventory.seeds[k] > 0);
-            if(!s) return tg.showAlert("Купи насіння!");
-            user.inventory.seeds[s]--;
-            obj.data = { emoji: s, finish: Date.now() + (crops.find(x=>x.e===s).t * 1000) };
-        } else if(Date.now() >= obj.data.finish) {
-            user.stats[obj.data.emoji] = (user.stats[obj.data.emoji] || 0) + 1;
-            user.totalHarvests++; obj.data = null;
+        function tab(name) {
+            document.getElementById('earn-page').style.display = name === 'earn' ? 'block' : 'none';
+            document.getElementById('withdraw-page').style.display = name === 'withdraw' ? 'block' : 'none';
+            document.getElementById('btn-earn').classList.toggle('active', name === 'earn');
+            document.getElementById('btn-withdraw').classList.toggle('active', name === 'withdraw');
         }
-    } else if(Date.now() >= obj.next) {
-        user.diamonds += 0.2; obj.next = Date.now() + 7200000;
-        tg.showAlert("+0.2 💎");
-    }
-    save(); renderMap();
-}
 
-function placeObject(i) {
-    if(currentLoc === 'farm' && user.inventory.plot > 0) { user.inventory.plot--; user.map_farm[i] = {type:'plot', data:null}; }
-    else if(currentLoc === 'mine' && user.inventory.stone > 0) { user.inventory.stone--; user.map_mine[i] = {type:'stone', next:Date.now()+7200000}; }
-    else return tg.showAlert("Купи предмет у Шопі!");
-    renderMap(); save();
-}
-
-function switchAuc(tab) { 
-    currentAucTab = tab; 
-    document.getElementById('auc-buy-tab').className = tab === 'buy' ? 'tab-btn active' : 'tab-btn';
-    document.getElementById('auc-sell-tab').className = tab === 'sell' ? 'tab-btn active' : 'tab-btn';
-    renderAuction(); 
-}
-
-function renderAuction() {
-    let cont = document.getElementById('auc-content');
-    if(currentAucTab === 'buy') {
-        cont.innerHTML = '<div class="auc-grid" id="auc-buy-list"></div>';
-        let fake = [{e:'🌽', n:'Кукурудза', c:5, p:15}, {e:'🥕', n:'Морква', c:2, p:20}];
-        fake.forEach(f => {
-            document.getElementById('auc-buy-list').innerHTML += `<div class="card" style="text-align:center"><div style="font-size:30px">${f.e}</div><b>${f.n}</b><br>К-сть: ${f.c}<button class="m-btn" onclick="buyAucFake(${f.p})">КУПИТИ ${f.p}💰</button></div>`;
-        });
-    } else {
-        let items = "";
-        for(let e in user.stats) if(user.stats[e] > 0) items += `<option value="${e}">${e}</option>`;
-        cont.innerHTML = `<div class="card">
-            <h4 style="margin:0">Новий лот (Лот ${user.myAuction.length}/3)</h4>
-            <select id="auc-item-sel">${items || '<option>Склад порожній</option>'}</select>
-            <input type="number" id="auc-count" placeholder="Кількість">
-            <input type="number" id="auc-price" placeholder="Ціна">
-            <button class="m-btn" onclick="createLot()">ВИСТАВИТИ</button>
-        </div><div id="my-lots-list"></div>`;
-        renderMyLots();
-    }
-}
-
-function createLot() {
-    if(user.myAuction.length >= 3) return tg.showAlert("Максимум 3 лоти!");
-    let e = document.getElementById('auc-item-sel').value;
-    let c = parseInt(document.getElementById('auc-count').value);
-    let p = parseFloat(document.getElementById('auc-price').value);
-    if(user.stats[e] >= c && c > 0 && p > 0) {
-        user.stats[e] -= c;
-        user.myAuction.push({e, c, p, expiry: Date.now() + 86400000});
-        save(); renderAuction();
-    } else tg.showAlert("Недостатньо товару!");
-}
-
-function renderMyLots() {
-    let list = document.getElementById('my-lots-list');
-    list.innerHTML = "";
-    user.myAuction.forEach((l, idx) => {
-        list.innerHTML += `<div class="card" style="display:flex;justify-content:space-between;align-items:center;">
-            <span>${l.e} x${l.c} - <b>${l.p}💰</b></span>
-            <button class="m-btn" style="width:auto;background:var(--red);color:white;margin:0;padding:5px 10px" onclick="cancelLot(${idx})">ВІДМІНА</button>
-        </div>`;
-    });
-}
-
-function cancelLot(idx) {
-    let l = user.myAuction[idx];
-    user.stats[l.e] = (user.stats[l.e] || 0) + l.c;
-    user.myAuction.splice(idx, 1);
-    save(); renderAuction();
-}
-
-function checkAuctionExpiry() {
-    let now = Date.now();
-    for(let i = user.myAuction.length-1; i>=0; i--) {
-        if(now > user.myAuction[i].expiry) {
-            let l = user.myAuction[i];
-            user.stats[l.e] = (user.stats[l.e] || 0) + l.c;
-            user.myAuction.splice(i, 1);
+        function subscribe(link) {
+            tg.openTelegramLink(link);
+            // Тут відправляємо боту сигнал, що юзер перейшов
+            tg.sendData("check_sub"); 
         }
-    }
-    save();
-}
 
-function buyLand(cost) { if(user.balance >= cost) { user.balance -= cost; if(currentLoc==='farm') user.slots_farm++; else user.slots_mine++; save(); renderMap(); } }
-function buySeed(e, p) { if(user.balance >= p) { user.balance -= p; user.inventory.seeds[e] = (user.inventory.seeds[e]||0)+1; save(); updateUI(); } }
-function buyObject(id, cost) { if(user.balance >= cost) { user.balance -= cost; user.inventory[id]++; save(); updateUI(); } }
-function buyAucFake(p) { if(user.balance >= p) { user.balance -= p; tg.showAlert("Куплено!"); save(); updateUI(); } }
-
-function renderShop() {
-    let h = "";
-    crops.forEach((c, idx) => {
-        let locked = idx > user.unlockedIdx;
-        h += `<div class="card" style="opacity:${locked?0.5:1}; display:flex; justify-content:space-between; align-items:center">
-            <span>${locked?'🔒':c.e} ${c.n} <br><small>${c.p}💰</small></span>
-            <button onclick="buySeed('${c.e}', ${c.p})" class="m-btn" style="width:auto;margin:0;" ${locked?'disabled':''}>КУПИТИ</button>
-        </div>`;
-    });
-    document.getElementById('seed-list').innerHTML = h;
-}
-
-function renderDealer() {
-    let h = ""; let empty = true;
-    for(let e in user.stats) {
-        if(user.stats[e] > 0) {
-            let crop = crops.find(x => x.e === e);
-            h += `<div class="card" style="display:flex;justify-content:space-between;"><span>${e} ${crop.n} (x${user.stats[e]})</span><span style="color:var(--gold)">+${(user.stats[e]*crop.s).toFixed(1)}💰</span></div>`;
-            empty = false;
+        function requestWithdraw() {
+            tg.sendData("withdraw_request");
         }
-    }
-    document.getElementById('inventory-sell').innerHTML = empty ? "<center>Склад порожній</center>" : h;
-}
-
-function sellAll() {
-    let inc = 0;
-    for(let e in user.stats) { let crop = crops.find(x => x.e === e); inc += user.stats[e] * crop.s; user.stats[e] = 0; }
-    user.balance += inc; save(); renderDealer();
-}
-
-function show(s, b) {
-    document.querySelectorAll('.screen').forEach(x => x.classList.remove('active-screen'));
-    document.getElementById(s + '-screen').classList.add('active-screen');
-    document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
-    b.classList.add('active');
-    if(s === 'shop') renderShop();
-    if(s === 'auction') renderAuction();
-    if(s === 'dealer') renderDealer();
-}
-
-function save() { localStorage.setItem('agro_pro_v1', JSON.stringify(user)); }
-</script></body></html>
-    
+    </script>
+</body>
+</html>
