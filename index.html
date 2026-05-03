@@ -2,33 +2,56 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; }
-        .stat { font-size: 30px; color: #ffad00; margin: 20px; }
-        .task { background: #222; border: 1px solid #444; padding: 15px; margin: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
-        button { background: #ffad00; border: none; padding: 10px; border-radius: 5px; font-weight: bold; }
+        body { font-family: sans-serif; background-color: #000; color: white; text-align: center; padding: 20px; }
+        .balance-card { background: linear-gradient(45deg, #ffad00, #ff8c00); border-radius: 20px; padding: 20px; margin-bottom: 30px; }
+        .balance-val { font-size: 45px; font-weight: bold; }
+        .task-card { background: #1a1a1a; border: 1px solid #333; border-radius: 15px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .btn { background: #ffad00; color: black; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="stat">⭐️ <span id="balance">0.0</span></div>
-    <div id="container"></div>
+    <div class="balance-card">
+        <div style="opacity: 0.8;">Мій Баланс</div>
+        <div class="balance-val"><span id="stars">0.0</span> ⭐</div>
+    </div>
+    
+    <div id="task-container"></div>
+
     <script>
         let tg = window.Telegram.WebApp;
-        tg.expand();
+        tg.expand(); // Розгортаємо на весь екран
+
+        // Отримуємо дані, які бот передав у посиланні
         const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('balance').innerText = urlParams.get('stars') || '0.0';
-        const rawChannels = urlParams.get('channels');
-        if (rawChannels) {
-            rawChannels.split(',').forEach(item => {
+        document.getElementById('stars').innerText = urlParams.get('stars') || '0.0';
+        
+        const rawData = urlParams.get('channels');
+        const container = document.getElementById('task-container');
+
+        if (rawData) {
+            // Розбиваємо список каналів і створюємо картки
+            rawData.split(',').forEach(item => {
                 let [name, link] = item.split('|');
-                document.getElementById('container').innerHTML += `
-                    <div class="task">
-                        <span>${name}</span>
-                        <button onclick="tg.openTelegramLink('${link}'); tg.sendData('check:${name}')">JOIN</button>
-                    </div>`;
+                if (name && link) {
+                    container.innerHTML += `
+                        <div class="task-card">
+                            <div style="text-align:left"><b>${name}</b><br><small>+0.3 Stars</small></div>
+                            <button class="btn" onclick="openTask('${link}', '${name}')">ПЕРЕЙТИ</button>
+                        </div>`;
+                }
             });
+        } else {
+            container.innerHTML = "<p style='opacity:0.5'>Завдань поки немає. Додай їх через /plys</p>";
+        }
+
+        function openTask(url, name) {
+            tg.openTelegramLink(url); // Відкриваємо канал
+            tg.sendData("check:" + name); // Кажемо боту перевірити підписку
         }
     </script>
 </body>
 </html>
+
