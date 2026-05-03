@@ -1,111 +1,115 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; margin: 0; padding: 15px; }
-        .header { text-align: center; font-size: 28px; padding: 20px 0; color: #ffad00; font-weight: bold; }
+        body { font-family: 'Inter', sans-serif; background: #0f0f0f; color: #ffffff; margin: 0; padding: 15px; }
+        .header { text-align: center; padding: 30px 0; }
+        .balance-title { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-value { font-size: 42px; font-weight: 800; color: #ffad00; margin: 5px 0; }
         
-        /* Шкала прогресу */
-        .progress-box { background: #2d2d2d; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #444; }
-        .progress-container { background: #444; border-radius: 10px; height: 12px; margin: 10px 0; overflow: hidden; }
-        .progress-bar { background: linear-gradient(90deg, #ffad00, #ffd200); height: 100%; width: 0%; transition: width 0.5s ease; }
-        .stats-text { display: flex; justify-content: space-between; font-size: 14px; color: #aaa; }
+        .progress-card { background: #1a1a1a; border-radius: 20px; padding: 20px; margin-bottom: 25px; border: 1px solid #333; }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .bar-bg { background: #333; border-radius: 10px; height: 12px; overflow: hidden; }
+        .bar-fill { background: linear-gradient(90deg, #ffad00, #ff8800); height: 100%; width: 0%; transition: 0.5s; }
 
-        .card { background: #1e1e1e; border-radius: 15px; padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .card-info { flex-grow: 1; }
-        .card-title { font-weight: bold; font-size: 16px; display: block; margin-bottom: 4px; }
-        .card-reward { color: #00c853; font-size: 14px; font-weight: bold; }
+        .list-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; padding-left: 5px; }
+        .card { background: #1a1a1a; border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2a2a2a; }
+        .card-name { font-weight: 600; font-size: 16px; display: block; }
+        .card-sub { color: #00c853; font-size: 13px; font-weight: 700; margin-top: 4px; display: block; }
         
-        .btn { background: #ffad00; color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); opacity: 0.8; }
-
-        .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #1e1e1e; display: flex; border-top: 1px solid #333; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { flex: 1; text-align: center; padding: 15px; color: #888; font-weight: bold; cursor: pointer; }
-        .nav-item.active { color: #ffad00; border-top: 3px solid #ffad00; }
+        .btn-sub { background: #ffad00; color: #000; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; }
         
-        #withdraw-page { display: none; text-align: center; padding-top: 50px; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: #121212; display: flex; border-top: 1px solid #222; padding-bottom: 20px; }
+        .nav-item { flex: 1; text-align: center; padding: 15px; color: #666; font-weight: 700; font-size: 12px; }
+        .nav-item.active { color: #ffad00; border-top: 2px solid #ffad00; }
+        
+        #withdraw-section { display: none; text-align: center; padding-top: 40px; }
+        .empty-msg { text-align: center; color: #555; margin-top: 40px; }
     </style>
 </head>
 <body>
-    <div id="earn-page">
-        <div class="header">💎 <span id="balance">0.0</span> Stars</div>
-        
-        <div class="progress-box">
-            <div class="stats-text">
-                <span>Прогрес виводу</span>
-                <span><span id="p-percent">0</span>%</span>
-            </div>
-            <div class="progress-container">
-                <div id="p-bar" class="progress-bar"></div>
-            </div>
-            <div class="stats-text" style="font-size: 12px;">Ціль: 15.0 Stars</div>
+    <div id="earn-section">
+        <div class="header">
+            <div class="balance-title">Current Balance</div>
+            <div class="balance-value"><span id="stars-val">0.0</span> <small style="font-size: 20px;">⭐</small></div>
         </div>
 
-        <div id="list">
-            <div class="card">
-                <div class="card-info">
-                    <span class="card-title">Paws & Tails 🐱</span>
-                    <span class="card-reward">+0.4 Stars</span>
-                </div>
-                <button class="btn" onclick="sub('https://t.me/your_channel', '@your_channel')">Підписатись</button>
+        <div class="progress-card">
+            <div class="progress-header">
+                <span>Payout Progress</span>
+                <span id="perc-val">0%</span>
             </div>
+            <div class="bar-bg"><div id="bar" class="bar-fill"></div></div>
+            <div style="font-size: 11px; color: #555; margin-top: 8px;">Target: 15.0 Stars</div>
         </div>
+
+        <div class="list-title">Available Tasks</div>
+        <div id="tasks-list"></div>
     </div>
 
-    <div id="withdraw-page">
-        <div class="header" style="color: #aaa;">💳 Виплата</div>
-        <p>Ваш баланс: <span id="w-balance">0.0</span> Stars</p>
-        <button class="btn" id="w-btn" style="width: 80%; margin-top: 20px;" onclick="withdraw()">Вивести</button>
+    <div id="withdraw-section">
+        <h2 style="color: #ffad00;">Withdrawal</h2>
+        <p style="color: #888;">Minimum amount to withdraw is 15 Stars.</p>
+        <button class="btn-sub" style="width: 80%; margin-top: 30px; padding: 15px;" onclick="requestPayout()">Withdraw Funds</button>
     </div>
 
-    <div class="nav">
-        <div class="nav-item active" id="t-earn" onclick="tab('earn')">ЗАРОБИТИ</div>
-        <div class="nav-item" id="t-draw" onclick="tab('withdraw')">ВИВЕСТИ</div>
+    <div class="navbar">
+        <div class="nav-item active" id="tab-e" onclick="switchTab('earn')">EARN</div>
+        <div class="nav-item" id="tab-w" onclick="switchTab('withdraw')">WITHDRAW</div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        let stars = 0.0; // Це має підтягуватись з бази бота
+        tg.headerColor = '#0f0f0f';
 
-        function updateUI(val) {
-            stars = val;
-            document.getElementById('balance').innerText = stars.toFixed(1);
-            document.getElementById('w-balance').innerText = stars.toFixed(1);
-            let p = (stars / 15) * 100;
-            document.getElementById('p-bar').style.width = Math.min(p, 100) + "%";
-            document.getElementById('p-percent').innerText = Math.floor(Math.min(p, 100));
-            
-            if(stars >= 15) {
-                document.getElementById('w-btn').style.background = "#00c853";
-            }
-        }
-
-        function tab(n) {
-            document.getElementById('earn-page').style.display = n=='earn'?'block':'none';
-            document.getElementById('withdraw-page').style.display = n=='withdraw'?'block':'none';
-            document.getElementById('t-earn').classList.toggle('active', n=='earn');
-            document.getElementById('t-draw').classList.toggle('active', n=='withdraw');
-        }
-
-        function sub(url, id) {
-            tg.openTelegramLink(url);
-            tg.sendData("check:" + id); // Відправляє боту запит на перевірку
-        }
-
-        function withdraw() {
-            if(stars < 15) {
-                tg.showAlert("Треба мінімум 15 Stars!");
-            } else {
-                tg.sendData("withdraw");
-            }
-        }
+        // Отримання даних з URL (переданих ботом)
+        const urlParams = new URLSearchParams(window.location.search);
+        const userStars = parseFloat(urlParams.get('stars')) || 0.0;
+        const rawChannels = urlParams.get('channels'); // Формат: name|link,name|link
         
-        updateUI(0.0); // Початковий стан
+        function init() {
+            document.getElementById('stars-val').innerText = userStars.toFixed(1);
+            let p = Math.min((userStars / 15) * 100, 100);
+            document.getElementById('bar').style.width = p + "%";
+            document.getElementById('perc-val').innerText = Math.floor(p) + "%";
+
+            const list = document.getElementById('tasks-list');
+            if (rawChannels) {
+                rawChannels.split(',').forEach(item => {
+                    let [username, link] = item.split('|');
+                    list.innerHTML += `
+                        <div class="card">
+                            <div><span class="card-name">${username}</span><span class="card-sub">+0.3 STARS</span></div>
+                            <button class="btn-sub" onclick="doTask('${link}', '${username}')">JOIN</button>
+                        </div>`;
+                });
+            } else {
+                list.innerHTML = '<div class="empty-msg">No tasks available right now.</div>';
+            }
+        }
+
+        function switchTab(t) {
+            document.getElementById('earn-section').style.display = t === 'earn' ? 'block' : 'none';
+            document.getElementById('withdraw-section').style.display = t === 'withdraw' ? 'block' : 'none';
+            document.getElementById('tab-e').classList.toggle('active', t === 'earn');
+            document.getElementById('tab-w').classList.toggle('active', t === 'withdraw');
+        }
+
+        function doTask(url, username) {
+            tg.openTelegramLink(url);
+            tg.sendData("check:" + username);
+        }
+
+        function requestPayout() {
+            if(userStars < 15) tg.showAlert("Insufficient balance!");
+            else tg.sendData("withdraw");
+        }
+
+        init();
     </script>
 </body>
 </html>
-
